@@ -5,3 +5,5 @@
 [![Build Status](https://travis-ci.org/morris25/LZ4.jl.svg?branch=master)](https://travis-ci.org/morris25/LZ4.jl)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/morris25/LZ4.jl?svg=true)](https://ci.appveyor.com/project/morris25/LZ4-jl)
 [![CodeCov](https://codecov.io/gh/morris25/LZ4.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/morris25/LZ4.jl)
+
+A simple julia wrapper for LZ4. Source: [LZ4](https://github.com/lz4/lz4)
