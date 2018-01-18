@@ -87,11 +87,13 @@ struct LZ4F_decompressOptions_t
 end
 
 function LZ4F_isError(code::Csize_t)
-    ccall((:LZ4F_isError, "liblz4"), UInt32, (Csize_t,), code)
+    err = ccall((:LZ4F_isError, "liblz4"), UInt32, (Csize_t,), code)
+    convert(Bool, err)
 end
 
 function LZ4F_getErrorName(code::Csize_t)
-    ccall((:LZ4F_getErrorName, "liblz4"), Cstring, (Csize_t,), code)
+    str = ccall((:LZ4F_getErrorName, "liblz4"), Cstring, (Csize_t,), code)
+    unsafe_string(str)
 end
 
 function LZ4F_compressionLevel_max()
@@ -99,11 +101,11 @@ function LZ4F_compressionLevel_max()
 end
 
 function LZ4F_compressFrameBound(srcSize::Csize_t, preferencesPtr)
-    ccall((:LZ4F_compressFrameBound, "liblz4"), Csize_t, (Csize_t, Ptr{LZ4F_preferences_t}), srcSize, preferencesPtr)
+    ccall((:LZ4F_compressFrameBound, "liblz4"), Csize_t, (Csize_t, Ref{LZ4F_preferences_t}), srcSize, preferencesPtr)
 end
 
 function LZ4F_compressFrame(dstBuffer, dstCapacity::Csize_t, srcBuffer, srcSize::Csize_t, preferencesPtr)
-    ccall((:LZ4F_compressFrame, "liblz4"), Csize_t, (Ptr{Void}, Csize_t, Ptr{Void}, Csize_t, Ptr{LZ4F_preferences_t}), dstBuffer, dstCapacity, srcBuffer, srcSize, preferencesPtr)
+    ccall((:LZ4F_compressFrame, "liblz4"), Csize_t, (Ptr{Void}, Csize_t, Ptr{Void}, Csize_t, Ref{LZ4F_preferences_t}), dstBuffer, dstCapacity, srcBuffer, srcSize, preferencesPtr)
 end
 
 function LZ4F_getVersion()
