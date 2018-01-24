@@ -18,6 +18,7 @@ mutable struct LZ4F_frameInfo_t
     blockChecksumFlag::Cuint
 end
 
+LZ4F_frameInfo_t() = LZ4F_frameInfo_t(0,0,0,0,0,0,0)
 
 mutable struct LZ4F_preferences_t
     frameInfo::LZ4F_frameInfo_t
@@ -25,6 +26,8 @@ mutable struct LZ4F_preferences_t
     autoFlush::Cuint         
     reserved::NTuple{4, Cuint}          
 end
+
+LZ4F_preferences_t() = LZ4F_preferences_t(LZ4F_frameInfo_t(), 0, 1, (0,0,0,0))
 
 struct LZ4F_CDict
     dictContent::Ptr{Void}
@@ -60,7 +63,7 @@ mutable struct LZ4F_cctx
     lz4CtxLevel::UInt32   
 end 
 
-struct LZ4F_dctx 
+mutable struct LZ4F_dctx 
     frameInfo::LZ4F_frameInfo_t
     version::UInt32
     dStage::Cuint
@@ -121,12 +124,14 @@ function LZ4F_freeCompressionContext(cctx)
 end
 
 function LZ4F_compressBegin(cctx, dstBuffer, dstCapacity::Csize_t, prefsPtr)
-    ccall((:LZ4F_compressBegin, "liblz4"), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Void}, Csize_t, Ptr{LZ4F_preferences_t}), cctx, dstBuffer, dstCapacity, prefsPtr)
+    ccall((:LZ4F_compressBegin, "liblz4"), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Void}, Csize_t, Ref{LZ4F_preferences_t}), cctx, dstBuffer, dstCapacity, prefsPtr)
 end
 
 function LZ4F_compressBound(srcSize::Csize_t, prefsPtr)
-    ccall((:LZ4F_compressBound, "liblz4"), Csize_t, (Csize_t, Ptr{LZ4F_preferences_t}), srcSize, prefsPtr)
+    ccall((:LZ4F_compressBound, "liblz4"), Csize_t, (Csize_t, Ref{LZ4F_preferences_t}), srcSize, prefsPtr)
 end
+
+LZ4F_compressBound(srcSize::Int, prefsPtr)=LZ4F_compressBound(convert(Csize_t, srcSize), prefsPtr)
 
 function LZ4F_compressUpdate(cctx, dstBuffer, dstCapacity::Csize_t, srcBuffer, srcSize::Csize_t, cOptPtr)
     ccall((:LZ4F_compressUpdate, "liblz4"), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Void}, Csize_t, Ptr{Void}, Csize_t, Ptr{LZ4F_compressOptions_t}), cctx, dstBuffer, dstCapacity, srcBuffer, srcSize, cOptPtr)
@@ -159,3 +164,4 @@ end
 function LZ4F_resetDecompressionContext(dctx)
     ccall((:LZ4F_resetDecompressionContext, "liblz4"), Void, (Ptr{LZ4F_dctx},), dctx)
 end
+

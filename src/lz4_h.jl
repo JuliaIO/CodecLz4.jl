@@ -73,97 +73,6 @@ const LZ4F_ERROR_frameDecoding_alreadyStarted = (UInt32)(19)
 const LZ4F_ERROR_maxCode = (UInt32)(20)
 # end enum ANONYMOUS_33
 
-# begin enum ANONYMOUS_12
-const ANONYMOUS_12 = UInt32
-const LZ4F_default = (UInt32)(0)
-const LZ4F_max64KB = (UInt32)(4)
-const LZ4F_max256KB = (UInt32)(5)
-const LZ4F_max1MB = (UInt32)(6)
-const LZ4F_max4MB = (UInt32)(7)
-# end enum ANONYMOUS_12
-
-# begin enum ANONYMOUS_13
-const ANONYMOUS_13 = UInt32
-const LZ4F_blockLinked = (UInt32)(0)
-const LZ4F_blockIndependent = (UInt32)(1)
-# end enum ANONYMOUS_13
-
-# begin enum ANONYMOUS_14
-const ANONYMOUS_14 = UInt32
-const LZ4F_noContentChecksum = (UInt32)(0)
-const LZ4F_contentChecksumEnabled = (UInt32)(1)
-# end enum ANONYMOUS_14
-
-# begin enum ANONYMOUS_15
-const ANONYMOUS_15 = UInt32
-const LZ4F_noBlockChecksum = (UInt32)(0)
-const LZ4F_blockChecksumEnabled = (UInt32)(1)
-# end enum ANONYMOUS_15
-
-# begin enum ANONYMOUS_16
-const ANONYMOUS_16 = UInt32
-const LZ4F_frame = (UInt32)(0)
-const LZ4F_skippableFrame = (UInt32)(1)
-# end enum ANONYMOUS_16
-
-# begin enum ANONYMOUS_17
-const ANONYMOUS_17 = UInt32
-const LZ4F_default = (UInt32)(0)
-const LZ4F_max64KB = (UInt32)(4)
-const LZ4F_max256KB = (UInt32)(5)
-const LZ4F_max1MB = (UInt32)(6)
-const LZ4F_max4MB = (UInt32)(7)
-# end enum ANONYMOUS_17
-
-# begin enum ANONYMOUS_18
-const ANONYMOUS_18 = UInt32
-const LZ4F_blockLinked = (UInt32)(0)
-const LZ4F_blockIndependent = (UInt32)(1)
-# end enum ANONYMOUS_18
-
-# begin enum ANONYMOUS_19
-const ANONYMOUS_19 = UInt32
-const LZ4F_noContentChecksum = (UInt32)(0)
-const LZ4F_contentChecksumEnabled = (UInt32)(1)
-# end enum ANONYMOUS_19
-
-# begin enum ANONYMOUS_20
-const ANONYMOUS_20 = UInt32
-const LZ4F_noBlockChecksum = (UInt32)(0)
-const LZ4F_blockChecksumEnabled = (UInt32)(1)
-# end enum ANONYMOUS_20
-
-# begin enum ANONYMOUS_21
-const ANONYMOUS_21 = UInt32
-const LZ4F_frame = (UInt32)(0)
-const LZ4F_skippableFrame = (UInt32)(1)
-# end enum ANONYMOUS_21
-
-# begin enum ANONYMOUS_22
-const ANONYMOUS_22 = UInt32
-const LZ4F_OK_NoError = (UInt32)(0)
-const LZ4F_ERROR_GENERIC = (UInt32)(1)
-const LZ4F_ERROR_maxBlockSize_invalid = (UInt32)(2)
-const LZ4F_ERROR_blockMode_invalid = (UInt32)(3)
-const LZ4F_ERROR_contentChecksumFlag_invalid = (UInt32)(4)
-const LZ4F_ERROR_compressionLevel_invalid = (UInt32)(5)
-const LZ4F_ERROR_headerVersion_wrong = (UInt32)(6)
-const LZ4F_ERROR_blockChecksum_invalid = (UInt32)(7)
-const LZ4F_ERROR_reservedFlag_set = (UInt32)(8)
-const LZ4F_ERROR_allocation_failed = (UInt32)(9)
-const LZ4F_ERROR_srcSize_tooLarge = (UInt32)(10)
-const LZ4F_ERROR_dstMaxSize_tooSmall = (UInt32)(11)
-const LZ4F_ERROR_frameHeader_incomplete = (UInt32)(12)
-const LZ4F_ERROR_frameType_unknown = (UInt32)(13)
-const LZ4F_ERROR_frameSize_wrong = (UInt32)(14)
-const LZ4F_ERROR_srcPtr_wrong = (UInt32)(15)
-const LZ4F_ERROR_decompressionFailed = (UInt32)(16)
-const LZ4F_ERROR_headerChecksum_invalid = (UInt32)(17)
-const LZ4F_ERROR_contentChecksum_invalid = (UInt32)(18)
-const LZ4F_ERROR_frameDecoding_alreadyStarted = (UInt32)(19)
-const LZ4F_ERROR_maxCode = (UInt32)(20)
-# end enum ANONYMOUS_22
-
 # Skipping MacroDefinition: LZ4LIB_API __attribute__ ( ( __visibility__ ( "default" ) ) )
 
 const LZ4_VERSION_MAJOR = 1
@@ -276,40 +185,7 @@ const LZ4_STREAMHCSIZE = 4LZ4HC_HASHTABLESIZE + 2LZ4HC_MAXD + 56
 const LZ4_STREAMHCSIZE_SIZET = floor(Int, LZ4_STREAMHCSIZE / sizeof(Csize_t))
 # Skipping MacroDefinition: LZ4_STREAMHCSIZE_SIZET ( LZ4_STREAMHCSIZE / sizeof ( size_t ) )
 
-# begin enum ANONYMOUS_23
-const ANONYMOUS_23 = UInt32
-const LZ4F_default = (UInt32)(0)
-const LZ4F_max64KB = (UInt32)(4)
-const LZ4F_max256KB = (UInt32)(5)
-const LZ4F_max1MB = (UInt32)(6)
-const LZ4F_max4MB = (UInt32)(7)
-# end enum ANONYMOUS_23
 
-# begin enum ANONYMOUS_24
-const ANONYMOUS_24 = UInt32
-const LZ4F_blockLinked = (UInt32)(0)
-const LZ4F_blockIndependent = (UInt32)(1)
-# end enum ANONYMOUS_24
-
-# begin enum ANONYMOUS_25
-const ANONYMOUS_25 = UInt32
-const LZ4F_noContentChecksum = (UInt32)(0)
-const LZ4F_contentChecksumEnabled = (UInt32)(1)
-# end enum ANONYMOUS_25
-
-# begin enum ANONYMOUS_26
-const ANONYMOUS_26 = UInt32
-const LZ4F_noBlockChecksum = (UInt32)(0)
-const LZ4F_blockChecksumEnabled = (UInt32)(1)
-# end enum ANONYMOUS_26
-
-# begin enum ANONYMOUS_27
-const ANONYMOUS_27 = UInt32
-const LZ4F_frame = (UInt32)(0)
-const LZ4F_skippableFrame = (UInt32)(1)
-
-
-# end enum ANONYMOUS_27
 
 
 const LZ4_STREAMSIZE_U64 =((1 << (LZ4_MEMORY_USAGE-3)) + 4)

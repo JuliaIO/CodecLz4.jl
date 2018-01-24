@@ -14,9 +14,30 @@ export LZ4F_frameInfo_t, LZ4F_getFrameInfo
 export LZ4F_HEADER_SIZE_MAX, LZ4F_compressionLevel_max
 export LZ4F_compressFrameBound, LZ4F_compressFrame
 
+export LZ4F_default
+export LZ4F_max64KB
+export LZ4F_max256KB
+export LZ4F_max1MB
+export LZ4F_max4MB
+
+export LZ4F_blockLinked
+export LZ4F_blockIndependent
+
+export LZ4F_noContentChecksum
+export LZ4F_contentChecksumEnabled
+
+export LZ4F_noBlockChecksum
+export LZ4F_blockChecksumEnabled
+
+export LZ4F_frame
+export LZ4F_skippableFrame
+
+export compress_stream, decompress_stream
+
 include("lz4_h.jl")
 #include("orig_lz4.jl")
 #include("lz4hc.jl")
 include("lz4frame.jl")
+include("stream_compression.jl")
 #include("lz4frame_static.jl")
 end
