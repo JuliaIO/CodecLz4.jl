@@ -13,6 +13,7 @@ export LZ4F_decompress, LZ4F_resetDecompressionContext
 export LZ4F_frameInfo_t, LZ4F_getFrameInfo
 export LZ4F_HEADER_SIZE_MAX, LZ4F_compressionLevel_max
 export LZ4F_compressFrameBound, LZ4F_compressFrame
+export LZ4F_compressOptions_t, LZ4F_decompressOptions_t
 
 export LZ4F_default
 export LZ4F_max64KB
@@ -35,7 +36,7 @@ export LZ4F_skippableFrame
 export compress_stream, decompress_stream
 
 include("lz4_h.jl")
-#include("orig_lz4.jl")
+include("orig_lz4.jl")
 #include("lz4hc.jl")
 include("lz4frame.jl")
 include("stream_compression.jl")
