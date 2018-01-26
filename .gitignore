@@ -4,3 +4,7 @@
 *.jl.mem
 /docs/build/
 /docs/site/
+/deps/deps.jl
+/deps/downloads
+/deps/src
+/deps/usr
