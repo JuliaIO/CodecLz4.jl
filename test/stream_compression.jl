@@ -1,3 +1,5 @@
+using LZ4
+
 function compare(fp0::IO, fp1::IO)
 
     result = true

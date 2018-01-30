@@ -1,4 +1,5 @@
 # Based on sample code from https://github.com/lz4/lz4/blob/dev/examples/frameCompress.c
+include("lz4frame.jl")
 
 const BUF_SIZE = 16*1024
 const LZ4_FOOTER_SIZE = 4

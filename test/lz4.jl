@@ -1,4 +1,3 @@
-
 @testset "orig_lz4" begin
      str_ptr = LZ4_createStream()
      @test str_ptr != C_NULL

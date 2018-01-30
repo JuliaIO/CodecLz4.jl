@@ -1,6 +1,6 @@
 # Julia wrapper for header: /usr/local/include/lz4frame.h
 # Automatically generated using Clang.jl wrap_c, version 0.0.0
-
+include("orig_lz4.jl")
 include("lz4hc.jl")
 
 # Constants
