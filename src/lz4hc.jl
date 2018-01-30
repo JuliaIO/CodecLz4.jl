@@ -1,5 +1,25 @@
 # Julia wrapper for header: /usr/local/include/lz4hc.h
 
+const LZ4HC_CLEVEL_MIN = 3
+const LZ4HC_CLEVEL_DEFAULT = 9
+const LZ4HC_CLEVEL_OPT_MIN = 11
+const LZ4HC_CLEVEL_MAX = 12
+
+###########################
+ # PRIVATE DEFINITIONS : Do Not Export
+ # Do not use these definitions.
+ # They are exposed to allow static allocation of `LZ4_streamHC_t`.
+ # Using these definitions makes the code vulnerable to potential API break when upgrading LZ4
+############################
+const LZ4HC_DICTIONARY_LOGSIZE = 17
+const LZ4HC_MAXD = 1 << LZ4HC_DICTIONARY_LOGSIZE
+const LZ4HC_MAXD_MASK = LZ4HC_MAXD - 1
+const LZ4HC_HASH_LOG = 15
+const LZ4HC_HASHTABLESIZE = 1 << LZ4HC_HASH_LOG
+const LZ4HC_HASH_MASK = LZ4HC_HASHTABLESIZE - 1
+const LZ4_STREAMHCSIZE = 4LZ4HC_HASHTABLESIZE + 2LZ4HC_MAXD + 56
+const LZ4_STREAMHCSIZE_SIZET = floor(Int, LZ4_STREAMHCSIZE / sizeof(Csize_t))
+
 struct LZ4_streamHC_t
 	table::NTuple{LZ4_STREAMHCSIZE_SIZET, Csize_t}
 end

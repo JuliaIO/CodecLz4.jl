@@ -44,7 +44,6 @@ export LZ4F_skippableFrame
 
 export compress_stream, decompress_stream
 
-include("lz4_h.jl")
 include("orig_lz4.jl")
 #include("lz4hc.jl")
 include("lz4frame.jl")

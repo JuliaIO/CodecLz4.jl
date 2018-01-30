@@ -1,4 +1,20 @@
 # Julia wrapper for header: /usr/local/include/lz4.h
+
+const LZ4_VERSION_MAJOR = 1
+const LZ4_VERSION_MINOR = 8
+const LZ4_VERSION_RELEASE = 0
+const LZ4_VERSION_NUMBER = LZ4_VERSION_MAJOR * 100 * 100 + LZ4_VERSION_MINOR * 100 + LZ4_VERSION_RELEASE
+
+const LZ4_MEMORY_USAGE = 14
+const LZ4_MAX_INPUT_SIZE = 0x7e000000
+
+const LZ4_HASHLOG = LZ4_MEMORY_USAGE - 2
+const LZ4_HASHTABLESIZE = 1 << LZ4_MEMORY_USAGE
+const LZ4_HASH_SIZE_U32 = 1 << LZ4_HASHLOG
+
+const LZ4_STREAMDECODESIZE_U64 = 4
+const LZ4_STREAMSIZE_U64 =((1 << (LZ4_MEMORY_USAGE-3)) + 4)
+
 struct LZ4_stream_t 
     table::NTuple{LZ4_STREAMSIZE_U64, Culonglong}
 end

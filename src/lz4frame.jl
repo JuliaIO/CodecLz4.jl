@@ -1,7 +1,57 @@
 # Julia wrapper for header: /usr/local/include/lz4frame.h
 # Automatically generated using Clang.jl wrap_c, version 0.0.0
-#include("orig_lz4.jl")
+
 include("lz4hc.jl")
+
+# Constants
+const LZ4F_VERSION = 100
+const LZ4F_HEADER_SIZE_MAX = 19
+
+# Block Size
+const LZ4F_default = (UInt32)(0)
+const LZ4F_max64KB = (UInt32)(4)
+const LZ4F_max256KB = (UInt32)(5)
+const LZ4F_max1MB = (UInt32)(6)
+const LZ4F_max4MB = (UInt32)(7)
+
+# Block Mode
+const LZ4F_blockLinked = (UInt32)(0)
+const LZ4F_blockIndependent = (UInt32)(1)
+
+# Content Checksum Flag
+const LZ4F_noContentChecksum = (UInt32)(0)
+const LZ4F_contentChecksumEnabled = (UInt32)(1)
+
+# Block Checksum Flag
+const LZ4F_noBlockChecksum = (UInt32)(0)
+const LZ4F_blockChecksumEnabled = (UInt32)(1)
+
+# Frame Type
+const LZ4F_frame = (UInt32)(0)
+const LZ4F_skippableFrame = (UInt32)(1)
+
+# Error Codes
+const LZ4F_OK_NoError = (UInt32)(0)
+const LZ4F_ERROR_GENERIC = (UInt32)(1)
+const LZ4F_ERROR_maxBlockSize_invalid = (UInt32)(2)
+const LZ4F_ERROR_blockMode_invalid = (UInt32)(3)
+const LZ4F_ERROR_contentChecksumFlag_invalid = (UInt32)(4)
+const LZ4F_ERROR_compressionLevel_invalid = (UInt32)(5)
+const LZ4F_ERROR_headerVersion_wrong = (UInt32)(6)
+const LZ4F_ERROR_blockChecksum_invalid = (UInt32)(7)
+const LZ4F_ERROR_reservedFlag_set = (UInt32)(8)
+const LZ4F_ERROR_allocation_failed = (UInt32)(9)
+const LZ4F_ERROR_srcSize_tooLarge = (UInt32)(10)
+const LZ4F_ERROR_dstMaxSize_tooSmall = (UInt32)(11)
+const LZ4F_ERROR_frameHeader_incomplete = (UInt32)(12)
+const LZ4F_ERROR_frameType_unknown = (UInt32)(13)
+const LZ4F_ERROR_frameSize_wrong = (UInt32)(14)
+const LZ4F_ERROR_srcPtr_wrong = (UInt32)(15)
+const LZ4F_ERROR_decompressionFailed = (UInt32)(16)
+const LZ4F_ERROR_headerChecksum_invalid = (UInt32)(17)
+const LZ4F_ERROR_contentChecksum_invalid = (UInt32)(18)
+const LZ4F_ERROR_frameDecoding_alreadyStarted = (UInt32)(19)
+const LZ4F_ERROR_maxCode = (UInt32)(20)
 
 struct LZ4F_compressOptions_t
     stableSrc::Cuint
