@@ -47,7 +47,7 @@
 			dstsize =  Ref{Csize_t}(8*1280)
 			decbuffer = Vector{UInt8}(1280)
 
-			frameinfo = LZ4F_frameInfo_t()
+			frameinfo = Ref(LZ4F_frameInfo_t())
 
 			@test_nowarn err = LZ4F_createDecompressionContext(dctx, version)
 			

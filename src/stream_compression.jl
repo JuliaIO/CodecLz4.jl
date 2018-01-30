@@ -7,6 +7,7 @@ const LZ4_FOOTER_SIZE = 4
 function compress_stream(filein::IO, out::IO) 
     count_in = 0
     count_out = 0
+    ctx = Ref{Ptr{LZ4F_cctx}}(C_NULL)
     try
         frame = LZ4F_frameInfo_t(LZ4F_max256KB, LZ4F_blockLinked, LZ4F_noContentChecksum, LZ4F_frame, 0, 0, LZ4F_noBlockChecksum)
 
@@ -18,7 +19,6 @@ function compress_stream(filein::IO, out::IO)
         bufsize = frame_size + LZ4F_HEADER_SIZE_MAX + LZ4_FOOTER_SIZE
         buf = Vector{UInt8}(bufsize)
 
-        ctx = Ref{Ptr{LZ4F_cctx}}(C_NULL)
         LZ4F_createCompressionContext(ctx, LZ4F_getVersion())
 
         headerSize = LZ4F_compressBegin(ctx[], buf, bufsize, prefs)
@@ -75,10 +75,9 @@ function get_block_size(frameinfo)
 end
 
 function decompress_stream(filein::IO, out::IO) 
-    try
         src = Vector{UInt8}(BUF_SIZE)
         dctx = Ref{Ptr{LZ4F_dctx}}(C_NULL)
-
+    try
         LZ4F_createDecompressionContext(dctx, LZ4F_getVersion())
 
         ret = 1
@@ -88,10 +87,10 @@ function decompress_stream(filein::IO, out::IO)
             srcPtr = pointer(src)
             srcEnd = srcPtr + srcSize[]
                
-            frameinfo = LZ4F_frameInfo_t()
+            frameinfo = Ref(LZ4F_frameInfo_t())
             ret = LZ4F_getFrameInfo(dctx[], frameinfo, src, srcSize)
             
-            dstCapacity = get_block_size(frameinfo)
+            dstCapacity = get_block_size(frameinfo[])
             
             dst = Vector{UInt8}(dstCapacity)
                 

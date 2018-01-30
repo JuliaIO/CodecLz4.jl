@@ -7,7 +7,7 @@ end
 
 include("../src/lz4frame.jl")
 
-@testset "orig_API" begin
+@testset "C interface" begin
     include("lz4.jl")
     include("lz4framed.jl")
 end

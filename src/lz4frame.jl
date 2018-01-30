@@ -232,7 +232,7 @@ function LZ4F_freeDecompressionContext(dctx::Ptr{LZ4F_dctx})
     ccall((:LZ4F_freeDecompressionContext, liblz4), Csize_t, (Ptr{LZ4F_dctx},), dctx)
 end
 
-function LZ4F_getFrameInfo(dctx::Ptr{LZ4F_dctx}, frameInfoPtr, srcBuffer, srcSizePtr)
+function LZ4F_getFrameInfo(dctx::Ptr{LZ4F_dctx}, frameInfoPtr::Ref{LZ4F_frameInfo_t}, srcBuffer, srcSizePtr)
     ret = ccall((:LZ4F_getFrameInfo, liblz4), Csize_t, (Ptr{LZ4F_dctx}, Ref{LZ4F_frameInfo_t}, Ptr{Void}, Ref{Csize_t}), dctx, frameInfoPtr, srcBuffer, srcSizePtr)
     if LZ4F_isError(ret)
         error("LZ4F_getFrameInfo: " * LZ4F_getErrorName(ret))
