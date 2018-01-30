@@ -20,37 +20,37 @@ function compare(fp0::IO, fp1::IO)
 end
 
 @testset "stream_compression" begin
-    inpFilename = "test.txt"
-    compressedInC = "compressed_in_c.lz4"
-    lz4Filename = inpFilename* ".lz4"
-    decFilename = lz4Filename* ".dec"
+    input_filename = "test.txt"
+    compressed_in_c = "compressed_in_c.lz4"
+    lz4_filename = input_filename* ".lz4"
+    dec_filename = lz4_filename* ".dec"
 
-    inpFp = open(inpFilename, "r")
-    outFp = open(lz4Filename, "w")
-    @test_nowarn compress_stream(inpFp, outFp)
-    close(outFp)
-    close(inpFp)  
+    in_fp = open(input_filename, "r")
+    out_fp = open(lz4_filename, "w")
+    @test_nowarn compress_stream(in_fp, out_fp)
+    close(out_fp)
+    close(in_fp)  
 
-    inpFp = open(lz4Filename, "r")
-    decFp = open(compressedInC, "r")
-    @test compare(inpFp, decFp)
+    in_fp = open(lz4_filename, "r")
+    decFp = open(compressed_in_c, "r")
+    @test compare(in_fp, decFp)
     close(decFp)
-    close(inpFp)
+    close(in_fp)
 
 
-    inpFp = open(compressedInC, "r")
-    outFp = open(decFilename, "w")
-    @test_nowarn decompress_stream(inpFp, outFp)
-    close(outFp)
-    close(inpFp)
+    in_fp = open(compressed_in_c, "r")
+    out_fp = open(dec_filename, "w")
+    @test_nowarn decompress_stream(in_fp, out_fp)
+    close(out_fp)
+    close(in_fp)
 
-    inpFp = open(inpFilename, "r")
-    decFp = open(decFilename, "r")
-    @test compare(inpFp, decFp)
+    in_fp = open(input_filename, "r")
+    decFp = open(dec_filename, "r")
+    @test compare(in_fp, decFp)
     close(decFp)
-    close(inpFp)
+    close(in_fp)
 
-    rm(lz4Filename, force=true)
-    rm(decFilename, force=true)
+    rm(lz4_filename, force=true)
+    rm(dec_filename, force=true)
 
 end
