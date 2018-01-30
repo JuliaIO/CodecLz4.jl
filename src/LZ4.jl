@@ -1,5 +1,14 @@
 __precompile__()
 module LZ4
+
+depsjl = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
+if isfile(depsjl)
+    include(depsjl)
+else
+    error("LZ4 not properly installed. Please run Pkg.build(\"LZ4\") and restart julia")
+end
+
+
 export LZ4_createStream, LZ4_freeStream
 export LZ4_compress_default, LZ4_compress_fast, LZ4_compressBound
 export LZ4_decompress_safe

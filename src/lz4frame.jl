@@ -91,25 +91,25 @@ struct LZ4F_decompressOptions_t
 end
 
 function LZ4F_isError(code::Csize_t)
-    err = ccall((:LZ4F_isError, "liblz4"), UInt32, (Csize_t,), code)
+    err = ccall((:LZ4F_isError, liblz4), UInt32, (Csize_t,), code)
     convert(Bool, err)
 end
 
 function LZ4F_getErrorName(code::Csize_t)
-    str = ccall((:LZ4F_getErrorName, "liblz4"), Cstring, (Csize_t,), code)
+    str = ccall((:LZ4F_getErrorName, liblz4), Cstring, (Csize_t,), code)
     unsafe_string(str)
 end
 
 function LZ4F_compressionLevel_max()
-    ccall((:LZ4F_compressionLevel_max, "liblz4"), Cint, ())
+    ccall((:LZ4F_compressionLevel_max, liblz4), Cint, ())
 end
 
 function LZ4F_compressFrameBound(srcSize::Csize_t, preferencesPtr::Ref{LZ4F_preferences_t})
-    ccall((:LZ4F_compressFrameBound, "liblz4"), Csize_t, (Csize_t, Ref{LZ4F_preferences_t}), srcSize, preferencesPtr)
+    ccall((:LZ4F_compressFrameBound, liblz4), Csize_t, (Csize_t, Ref{LZ4F_preferences_t}), srcSize, preferencesPtr)
 end
 
 function LZ4F_compressFrame(dstBuffer, dstCapacity::Csize_t, srcBuffer, srcSize::Csize_t, preferencesPtr::Ref{LZ4F_preferences_t})
-    ret = ccall((:LZ4F_compressFrame, "liblz4"), Csize_t, (Ptr{Void}, Csize_t, Ptr{Void}, Csize_t, Ref{LZ4F_preferences_t}), dstBuffer, dstCapacity, srcBuffer, srcSize, preferencesPtr)
+    ret = ccall((:LZ4F_compressFrame, liblz4), Csize_t, (Ptr{Void}, Csize_t, Ptr{Void}, Csize_t, Ref{LZ4F_preferences_t}), dstBuffer, dstCapacity, srcBuffer, srcSize, preferencesPtr)
     if LZ4F_isError(ret)
         error("LZ4F_compressFrame: " * LZ4F_getErrorName(ret))
     end
@@ -117,11 +117,11 @@ function LZ4F_compressFrame(dstBuffer, dstCapacity::Csize_t, srcBuffer, srcSize:
 end
 
 function LZ4F_getVersion()
-    ccall((:LZ4F_getVersion, "liblz4"), UInt32, ())
+    ccall((:LZ4F_getVersion, liblz4), UInt32, ())
 end
 
 function LZ4F_createCompressionContext(cctxPtr::Ref{Ptr{LZ4F_cctx}}, version::UInt32)
-    ret = ccall((:LZ4F_createCompressionContext, "liblz4"), Csize_t, (Ref{Ptr{LZ4F_cctx}}, UInt32), cctxPtr, version)
+    ret = ccall((:LZ4F_createCompressionContext, liblz4), Csize_t, (Ref{Ptr{LZ4F_cctx}}, UInt32), cctxPtr, version)
     if LZ4F_isError(ret)
         error("LZ4F_createCompressionContext: " * LZ4F_getErrorName(ret))
     end
@@ -129,11 +129,11 @@ function LZ4F_createCompressionContext(cctxPtr::Ref{Ptr{LZ4F_cctx}}, version::UI
 end
 
 function LZ4F_freeCompressionContext(cctx::Ptr{LZ4F_cctx})
-    ccall((:LZ4F_freeCompressionContext, "liblz4"), Csize_t, (Ptr{LZ4F_cctx},), cctx)
+    ccall((:LZ4F_freeCompressionContext, liblz4), Csize_t, (Ptr{LZ4F_cctx},), cctx)
 end
 
 function LZ4F_compressBegin(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize_t, prefsPtr::Ref{LZ4F_preferences_t})
-    ret = ccall((:LZ4F_compressBegin, "liblz4"), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Void}, Csize_t, Ref{LZ4F_preferences_t}), cctx, dstBuffer, dstCapacity, prefsPtr)
+    ret = ccall((:LZ4F_compressBegin, liblz4), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Void}, Csize_t, Ref{LZ4F_preferences_t}), cctx, dstBuffer, dstCapacity, prefsPtr)
     if LZ4F_isError(ret)
         error("LZ4F_compressBegin: " * LZ4F_getErrorName(ret))
     end
@@ -141,13 +141,13 @@ function LZ4F_compressBegin(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize_
 end
 
 function LZ4F_compressBound(srcSize::Csize_t, prefsPtr::Ref{LZ4F_preferences_t})
-    ccall((:LZ4F_compressBound, "liblz4"), Csize_t, (Csize_t, Ref{LZ4F_preferences_t}), srcSize, prefsPtr)
+    ccall((:LZ4F_compressBound, liblz4), Csize_t, (Csize_t, Ref{LZ4F_preferences_t}), srcSize, prefsPtr)
 end
 
 LZ4F_compressBound(srcSize::Int, prefsPtr::Ref{LZ4F_preferences_t})=LZ4F_compressBound(convert(Csize_t, srcSize), prefsPtr)
 
 function LZ4F_compressUpdate(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize_t, srcBuffer, srcSize::Csize_t, cOptPtr)
-    ret = ccall((:LZ4F_compressUpdate, "liblz4"), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Void}, Csize_t, Ptr{Void}, Csize_t, Ptr{LZ4F_compressOptions_t}), cctx, dstBuffer, dstCapacity, srcBuffer, srcSize, cOptPtr)
+    ret = ccall((:LZ4F_compressUpdate, liblz4), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Void}, Csize_t, Ptr{Void}, Csize_t, Ptr{LZ4F_compressOptions_t}), cctx, dstBuffer, dstCapacity, srcBuffer, srcSize, cOptPtr)
     if LZ4F_isError(ret)
         error("LZ4F_compressUpdate: " * LZ4F_getErrorName(ret))
     end
@@ -155,7 +155,7 @@ function LZ4F_compressUpdate(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize
 end
 
 function LZ4F_flush(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize_t, cOptPtr)
-    ret = ccall((:LZ4F_flush, "liblz4"), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Void}, Csize_t, Ptr{LZ4F_compressOptions_t}), cctx, dstBuffer, dstCapacity, cOptPtr)
+    ret = ccall((:LZ4F_flush, liblz4), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Void}, Csize_t, Ptr{LZ4F_compressOptions_t}), cctx, dstBuffer, dstCapacity, cOptPtr)
     if LZ4F_isError(ret)
         error("LZ4F_flush: " * LZ4F_getErrorName(ret))
     end
@@ -163,7 +163,7 @@ function LZ4F_flush(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize_t, cOptP
 end
 
 function LZ4F_compressEnd(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize_t, cOptPtr)
-    ret = ccall((:LZ4F_compressEnd, "liblz4"), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Void}, Csize_t, Ptr{LZ4F_compressOptions_t}), cctx, dstBuffer, dstCapacity, cOptPtr)
+    ret = ccall((:LZ4F_compressEnd, liblz4), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Void}, Csize_t, Ptr{LZ4F_compressOptions_t}), cctx, dstBuffer, dstCapacity, cOptPtr)
     if LZ4F_isError(ret)
         error("LZ4F_compressEnd: " * LZ4F_getErrorName(ret))
     end
@@ -171,7 +171,7 @@ function LZ4F_compressEnd(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize_t,
 end
 
 function LZ4F_createDecompressionContext(dctxPtr::Ref{Ptr{LZ4F_dctx}}, version::UInt32)
-    ret = ccall((:LZ4F_createDecompressionContext, "liblz4"), Csize_t, (Ref{Ptr{LZ4F_dctx}}, UInt32), dctxPtr, version)
+    ret = ccall((:LZ4F_createDecompressionContext, liblz4), Csize_t, (Ref{Ptr{LZ4F_dctx}}, UInt32), dctxPtr, version)
     if LZ4F_isError(ret)
         error("LZ4F_createDecompressionContext: " * LZ4F_getErrorName(ret))
     end
@@ -179,11 +179,11 @@ function LZ4F_createDecompressionContext(dctxPtr::Ref{Ptr{LZ4F_dctx}}, version::
 end
 
 function LZ4F_freeDecompressionContext(dctx::Ptr{LZ4F_dctx})
-    ccall((:LZ4F_freeDecompressionContext, "liblz4"), Csize_t, (Ptr{LZ4F_dctx},), dctx)
+    ccall((:LZ4F_freeDecompressionContext, liblz4), Csize_t, (Ptr{LZ4F_dctx},), dctx)
 end
 
 function LZ4F_getFrameInfo(dctx::Ptr{LZ4F_dctx}, frameInfoPtr, srcBuffer, srcSizePtr)
-    ret = ccall((:LZ4F_getFrameInfo, "liblz4"), Csize_t, (Ptr{LZ4F_dctx}, Ref{LZ4F_frameInfo_t}, Ptr{Void}, Ref{Csize_t}), dctx, frameInfoPtr, srcBuffer, srcSizePtr)
+    ret = ccall((:LZ4F_getFrameInfo, liblz4), Csize_t, (Ptr{LZ4F_dctx}, Ref{LZ4F_frameInfo_t}, Ptr{Void}, Ref{Csize_t}), dctx, frameInfoPtr, srcBuffer, srcSizePtr)
     if LZ4F_isError(ret)
         error("LZ4F_getFrameInfo: " * LZ4F_getErrorName(ret))
     end
@@ -191,7 +191,7 @@ function LZ4F_getFrameInfo(dctx::Ptr{LZ4F_dctx}, frameInfoPtr, srcBuffer, srcSiz
 end
 
 function LZ4F_decompress(dctx::Ptr{LZ4F_dctx}, dstBuffer, dstSizePtr::Ref{Csize_t}, srcBuffer, srcSizePtr::Ref{Csize_t}, dOptPtr)
-    ret = ccall((:LZ4F_decompress, "liblz4"), Csize_t, (Ptr{LZ4F_dctx}, Ptr{Void}, Ref{Csize_t}, Ptr{Void}, Ref{Csize_t}, Ptr{LZ4F_decompressOptions_t}), dctx, dstBuffer, dstSizePtr, srcBuffer, srcSizePtr, dOptPtr)
+    ret = ccall((:LZ4F_decompress, liblz4), Csize_t, (Ptr{LZ4F_dctx}, Ptr{Void}, Ref{Csize_t}, Ptr{Void}, Ref{Csize_t}, Ptr{LZ4F_decompressOptions_t}), dctx, dstBuffer, dstSizePtr, srcBuffer, srcSizePtr, dOptPtr)
     if LZ4F_isError(ret)
         error("LZ4F_decompress: " * LZ4F_getErrorName(ret))
     end
@@ -199,6 +199,6 @@ function LZ4F_decompress(dctx::Ptr{LZ4F_dctx}, dstBuffer, dstSizePtr::Ref{Csize_
 end
 
 function LZ4F_resetDecompressionContext(dctx::Ptr{LZ4F_dctx})
-    ccall((:LZ4F_resetDecompressionContext, "liblz4"), Void, (Ptr{LZ4F_dctx},), dctx)
+    ccall((:LZ4F_resetDecompressionContext, liblz4), Void, (Ptr{LZ4F_dctx},), dctx)
 end
 
