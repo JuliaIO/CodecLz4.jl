@@ -6,10 +6,10 @@
 
 	@testset "Errors" begin
 		ERROR_GENERIC = (UInt)(18446744073709551615)
-		NoError = (UInt)(0)
+		no_error = (UInt)(0)
 
-		@test !LZ4F_isError(NoError)
-		@test LZ4F_getErrorName(NoError) == "Unspecified error code"
+		@test !LZ4F_isError(no_error)
+		@test LZ4F_getErrorName(no_error) == "Unspecified error code"
 		
 		@test LZ4F_isError(ERROR_GENERIC)
 		@test LZ4F_getErrorName(ERROR_GENERIC) == "ERROR_GENERIC"

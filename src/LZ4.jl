@@ -9,11 +9,16 @@ else
 end
 
 export compress_stream, decompress_stream
+export LZ4Compressor, LZ4CompressorStream
+export LZ4Decompressor, LZ4DecompressorStream
 
-#include("orig_lz4.jl")
-#include("lz4hc.jl")
-#include("lz4frame.jl")
-#include("lz4frame_static.jl")
+import TranscodingStreams:
+    TranscodingStreams,
+    TranscodingStream,
+    Memory,
+    Error,
+    initialize,
+    finalize
 
 include("stream_compression.jl")
 
