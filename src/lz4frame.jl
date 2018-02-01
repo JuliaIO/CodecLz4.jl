@@ -30,29 +30,6 @@ const LZ4F_blockChecksumEnabled = (UInt32)(1)
 const LZ4F_frame = (UInt32)(0)
 const LZ4F_skippableFrame = (UInt32)(1)
 
-# Error Codes
-const LZ4F_OK_NoError = (UInt32)(0)
-const LZ4F_ERROR_GENERIC = (UInt32)(1)
-const LZ4F_ERROR_maxBlockSize_invalid = (UInt32)(2)
-const LZ4F_ERROR_blockMode_invalid = (UInt32)(3)
-const LZ4F_ERROR_contentChecksumFlag_invalid = (UInt32)(4)
-const LZ4F_ERROR_compressionLevel_invalid = (UInt32)(5)
-const LZ4F_ERROR_headerVersion_wrong = (UInt32)(6)
-const LZ4F_ERROR_blockChecksum_invalid = (UInt32)(7)
-const LZ4F_ERROR_reservedFlag_set = (UInt32)(8)
-const LZ4F_ERROR_allocation_failed = (UInt32)(9)
-const LZ4F_ERROR_srcSize_tooLarge = (UInt32)(10)
-const LZ4F_ERROR_dstMaxSize_tooSmall = (UInt32)(11)
-const LZ4F_ERROR_frameHeader_incomplete = (UInt32)(12)
-const LZ4F_ERROR_frameType_unknown = (UInt32)(13)
-const LZ4F_ERROR_frameSize_wrong = (UInt32)(14)
-const LZ4F_ERROR_srcPtr_wrong = (UInt32)(15)
-const LZ4F_ERROR_decompressionFailed = (UInt32)(16)
-const LZ4F_ERROR_headerChecksum_invalid = (UInt32)(17)
-const LZ4F_ERROR_contentChecksum_invalid = (UInt32)(18)
-const LZ4F_ERROR_frameDecoding_alreadyStarted = (UInt32)(19)
-const LZ4F_ERROR_maxCode = (UInt32)(20)
-
 struct LZ4F_compressOptions_t
     stableSrc::Cuint
     reserved::NTuple{3, Cuint}
@@ -77,8 +54,6 @@ struct LZ4F_preferences_t
     autoFlush::Cuint         
     reserved::NTuple{4, Cuint}          
 end
-
-LZ4F_preferences_t() = LZ4F_preferences_t(LZ4F_frameInfo_t(), 0, 0, (0,0,0,0))
 
 struct LZ4F_CDict
     dictContent::Ptr{Void}
@@ -193,8 +168,6 @@ end
 function LZ4F_compressBound(srcSize::Csize_t, prefsPtr::Ref{LZ4F_preferences_t})
     ccall((:LZ4F_compressBound, liblz4), Csize_t, (Csize_t, Ref{LZ4F_preferences_t}), srcSize, prefsPtr)
 end
-
-LZ4F_compressBound(srcSize::Int, prefsPtr::Ref{LZ4F_preferences_t})=LZ4F_compressBound(convert(Csize_t, srcSize), prefsPtr)
 
 function LZ4F_compressUpdate(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize_t, srcBuffer, srcSize::Csize_t, cOptPtr)
     ret = ccall((:LZ4F_compressUpdate, liblz4), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Void}, Csize_t, Ptr{Void}, Csize_t, Ptr{LZ4F_compressOptions_t}), cctx, dstBuffer, dstCapacity, srcBuffer, srcSize, cOptPtr)

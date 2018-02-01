@@ -9,5 +9,5 @@ include("../src/lz4frame.jl")
 
 @testset "C interface" begin
     include("lz4.jl")
-    include("lz4framed.jl")
+    include("lz4frame.jl")
 end

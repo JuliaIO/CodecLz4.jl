@@ -1,5 +1,6 @@
 # Julia wrapper for header: /usr/local/include/lz4frame_static.h
 # Automatically generated using Clang.jl wrap_c, version 0.0.0
+# This is included for completeness and remains untested
 
 function LZ4F_getErrorCode(functionResult::Csize_t)
     ccall((:LZ4F_getErrorCode, liblz4), Csize_t, (Csize_t,), functionResult)

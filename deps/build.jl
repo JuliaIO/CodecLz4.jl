@@ -7,7 +7,7 @@ function validate_lz4(name,handle)
     return f != C_NULL
 end
 
-liblz4 = library_dependency("liblz4", validate = validate_lz4)
+liblz4 = library_dependency("liblz4", aliases = ["liblz4.so.1.8.1"]  validate = validate_lz4)
 version = "1.8.1.2"
 
 suffix = "$(Libdl.dlext).1.8.1"
@@ -26,7 +26,7 @@ prefix = joinpath(BinDeps.depsdir(liblz4), "usr")
 
 provides(Binaries,
     URI("https://github.com/lz4/lz4/releases/download/v$version/lz4_v1_8_1_win$(Sys.WORD_SIZE).zip"),
-    [liblz4], unpacked_dir=".",
+    [liblz4], 
     os = :Windows)
 
 

@@ -8,7 +8,6 @@ else
     error("LZ4 not properly installed. Please run Pkg.build(\"LZ4\") and restart julia")
 end
 
-export compress_stream, decompress_stream
 export LZ4Compressor, LZ4CompressorStream
 export LZ4Decompressor, LZ4DecompressorStream
 
@@ -16,9 +15,7 @@ import TranscodingStreams:
     TranscodingStreams,
     TranscodingStream,
     Memory,
-    Error,
-    initialize,
-    finalize
+    Error
 
 include("stream_compression.jl")
 
