@@ -25,7 +25,7 @@ srcdir = joinpath(BinDeps.srcdir(liblz4), "lz4-$version")
 prefix = joinpath(BinDeps.depsdir(liblz4), "usr")
 
 provides(Binaries,
-    URI("https://github.com/lz4/lz4/releases/download/v$version/llz4_v1_8_1_win$(Sys.ARCH).zip"),
+    URI("https://github.com/lz4/lz4/releases/download/v$version/lz4_v1_8_1_win$(Sys.WORD_SIZE).zip"),
     [liblz4], unpacked_dir=".",
     os = :Windows)
 
