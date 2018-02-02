@@ -6,7 +6,8 @@
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/morris25/LZ4.jl?svg=true)](https://ci.appveyor.com/project/morris25/LZ4-jl)
 [![CodeCov](https://codecov.io/gh/morris25/LZ4.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/morris25/LZ4.jl)
 
-Provides a transcoding codec for LZ4. Source: [LZ4](https://github.com/lz4/lz4)
+Provides a transcoding codec for LZ4. Source: [LZ4](https://github.com/lz4/lz4) 
+The compression algorithm is similar to the compression available through [Blosc.jl](https://github.com/stevengj/Blosc.jl), but uses the LZ4 Frame format as opposed to the standard LZ4 or LZ4_HC formats.
 
 ## Installation
 
@@ -41,4 +42,4 @@ compressed = transcode(LZ4Compressor, text)
 @assert sizeof(compressed) < sizeof(text)
 @assert transcode(LZ4Decompressor, compressed) == Vector{UInt8}(text)
 ```
-The API is based off of [CodecZLib](https://github.com/bicycle1885/CodecZlib.jl), and uses [TranscodingStreams.jl](https://github.com/bicycle1885/TranscodingStreams.jl). See those for details.
+The API is heavily based off of [CodecZLib](https://github.com/bicycle1885/CodecZlib.jl), and uses [TranscodingStreams.jl](https://github.com/bicycle1885/TranscodingStreams.jl). See those for details.
