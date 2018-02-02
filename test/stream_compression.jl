@@ -1,6 +1,9 @@
 using LZ4
 using TranscodingStreams:
     TranscodingStream,
+    TranscodingStreams,
+    Error,
+    Memory,
     test_roundtrip_fileio,
     test_roundtrip_transcode
 
@@ -41,7 +44,20 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     
     @test hash(read(stream)) == hash(text)
     close(stream)
+    close(file)
 
+    file = IOBuffer(text)
+    stream = LZ4DecompressorStream(LZ4CompressorStream(file; blocksizeid = (UInt32)(4)))
+    flush(stream)
     
-    
+    @test hash(read(stream)) == hash(text)
+    close(stream)
+    close(file)
+
+    input = Memory(Vector{UInt8}(text))
+    output = Memory(Vector{UInt8}(1280))
+    not_initialized = LZ4Compressor()
+    @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
+    @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0,0,:error)
+   
 end
