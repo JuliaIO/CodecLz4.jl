@@ -55,9 +55,9 @@ function LZ4_loadDictHC(streamHCPtr, dictionary, dictSize)
 end
 
 function LZ4_compress_HC_continue(streamHCPtr, src, dst, srcSize, maxDstSize)
-    ccall((:LZ4_compress_HC_extStateHC, liblz4), Int32, (Ptr{LZ4_streamHC_t}, Cstring, Cstring, Int32, Int32), streamHCPtr, safeBuffer, maxDictSize)
+    ccall((:LZ4_compress_HC_extStateHC, liblz4), Int32, (Ptr{LZ4_streamHC_t}, Cstring, Cstring, Int32, Int32), streamHCPtr, src, dst, srcSize, maxDstSize)
 end
 
 function LZ4_saveDictHC(streamHCPtr, safeBuffer, maxDictSize)
-    ccall((:LZ4_saveDictHC, liblz4), Int32, (Ptr{LZ4_streamHC_t}, Cstring, Int32), streamHCPtr, dictionary, dictSize)
+    ccall((:LZ4_saveDictHC, liblz4), Int32, (Ptr{LZ4_streamHC_t}, Cstring, Int32), streamHCPtr, safeBuffer, maxDictSize)
 end
