@@ -5,23 +5,56 @@ using TranscodingStreams
 const BUF_SIZE = 16*1024
 const LZ4_FOOTER_SIZE = 4
 
+# borrowed from CodecZlib.jl
+function splitkwargs(kwargs, keys)
+    hits = []
+    others = []
+    for kwarg in kwargs
+        push!(kwarg[1] ∈ keys ? hits : others, kwarg)
+    end
+    return hits, others
+end
+
 mutable struct LZ4Compressor <: TranscodingStreams.Codec
     ctx::Ref{Ptr{LZ4F_cctx}}
     prefs::Ref{LZ4F_preferences_t}
     header::Memory
 end
 
-function LZ4Compressor()
+"""
+    LZ4Compressor(;blocksizeid::UInt32=$(LZ4F_default), blockmode::Cuint=$(LZ4F_blockLinked), 
+        contentchecksumflag::Cuint=$(LZ4F_noContentChecksum), frametype::Cuint=$(LZ4F_frame), contentsize::Culonglong=0, 
+        blockchecksumflag::Cuint=$(LZ4F_noBlockChecksum), compressionlevel::Cint=0, autoflush::Cuint=0)
+Creates an LZ4 compression codec.
+
+Arguments:
+- `blocksizeid`: max64KB, max256KB, max1MB, or max4MB (4..7) (0 for default)
+- `blockmode`:  0 for LZ4F_blockLinked or 1 for LZ4F_blockIndependent
+- `contentchecksumflag`: if 1, frame is terminated with a 32-bits checksum of decompressed data (0..1)
+- `frametype`:  0 for LZ4F_frame or 1 for LZ4F_skippableFrame
+- `contentsize`: Size of uncompressed content (0 for unknown)
+- `blockchecksumflag`: if 1, each block is followed by a checksum of block's compressed data (0..1)
+- `compressionlevel`: compression level (-1..12)
+- `autoflush`: 1 == always flush (0..1)
+"""
+function LZ4Compressor(; kwargs...)
+    x, y = splitkwargs(kwargs, (:compressionlevel, :autoflush))
+    
     ctx = Ref{Ptr{LZ4F_cctx}}(C_NULL)
-    frame = LZ4F_frameInfo_t(LZ4F_max256KB, LZ4F_blockLinked, LZ4F_noContentChecksum, LZ4F_frame, 0, 0, LZ4F_noBlockChecksum)
-    prefs = Ref(LZ4F_preferences_t(frame, 0,0, (0,0,0,0)))
+    frame = LZ4F_frameInfo_t(; y...)
+    prefs = Ref(LZ4F_preferences_t(frame; x...))
     return LZ4Compressor(ctx, prefs, Memory(pointer(""), 0))
 end
 
-const LZ4CompressorStream{S} = TranscodingStream{LZ4Compressor,S} where S<:IO
+const LZ4CompressorStream{S} = TranscodingStream{LZ4Compressor,S} where S<:IO 
 
-function LZ4CompressorStream(stream::IO)
-    return TranscodingStream(LZ4Compressor(), stream)
+"""
+    LZ4CompressorStream(stream::IO; kwargs...)
+Creates an LZ4 compression stream. See `LZ4Compressor()` and `TranscodingStream()` for arguments.
+"""
+function LZ4CompressorStream(stream::IO; kwargs...)
+    x, y = splitkwargs(kwargs, (:blocksizeid, :blockmode, :contentchecksumflag, :blockchecksumflag, :frametype, :contentsize, :compressionlevel, :autoflush))
+    return TranscodingStream(LZ4Compressor(;x...), stream; y...)
 end
 
 """
@@ -104,6 +137,10 @@ struct LZ4Decompressor <: TranscodingStreams.Codec
     dctx::Ref{Ptr{LZ4F_dctx}}
 end
 
+"""
+    LZ4Compressor()
+Creates an LZ4 decompression codec.
+"""
 function LZ4Decompressor()
     dctx = Ref{Ptr{LZ4F_dctx}}(C_NULL)
     return LZ4Decompressor(dctx)
@@ -111,8 +148,12 @@ end
 
 const LZ4DecompressorStream{S} = TranscodingStream{LZ4Decompressor,S} where S<:IO
 
-function LZ4DecompressorStream(stream::IO)
-    return TranscodingStream(LZ4Decompressor(), stream)
+"""
+    LZ4CompressorStream(stream::IO; kwargs...)
+Creates an LZ4 decompression stream. See `TranscodingStream()` for arguments.
+"""
+function LZ4DecompressorStream(stream::IO; kwargs...)
+    return TranscodingStream(LZ4Decompressor(), stream; kwargs...)
 end
 
 """

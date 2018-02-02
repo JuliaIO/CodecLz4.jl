@@ -38,8 +38,8 @@ struct LZ4F_compressOptions_t
 end
 
 struct LZ4F_frameInfo_t
-    blockSizeID::UInt32         
-    blockMode::Cuint           
+    blockSizeID::UInt32
+    blockMode::Cuint      
     contentChecksumFlag::Cuint
     frameType::Cuint
     contentSize::Culonglong
@@ -47,14 +47,22 @@ struct LZ4F_frameInfo_t
     blockChecksumFlag::Cuint
 end
 
-LZ4F_frameInfo_t() = LZ4F_frameInfo_t(LZ4F_default, LZ4F_blockLinked, LZ4F_noContentChecksum, 
-                                            LZ4F_frame, 0, 0, LZ4F_noBlockChecksum)
+function LZ4F_frameInfo_t(; blocksizeid::UInt32=LZ4F_default, blockmode::Cuint=LZ4F_blockLinked, 
+    contentchecksumflag::Cuint=LZ4F_noContentChecksum, frametype::Cuint=LZ4F_frame, contentsize::Culonglong=(Culonglong)(0), 
+    blockchecksumflag::Cuint=LZ4F_noBlockChecksum) 
+
+    LZ4F_frameInfo_t(blocksizeid, blockmode, contentchecksumflag, frametype, contentsize, (UInt)(0), blockchecksumflag)
+end
 
 struct LZ4F_preferences_t
     frameInfo::LZ4F_frameInfo_t
-    compressionLevel::Cint   
-    autoFlush::Cuint         
-    reserved::NTuple{4, Cuint}          
+    compressionLevel::Cint
+    autoFlush::Cuint      
+    reserved::NTuple{4, Cuint}        
+end
+
+function LZ4F_preferences_t(frame_info::LZ4F_frameInfo_t; compressionlevel::Cint=(Cint)(0), autoflush::Cuint=(Cuint)(0))
+    LZ4F_preferences_t(frame_info, compressionlevel, autoflush, (0,0,0,0))
 end
 
 struct LZ4F_CDict

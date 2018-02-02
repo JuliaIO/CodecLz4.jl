@@ -7,7 +7,7 @@ function validate_lz4(name,handle)
     return f != C_NULL
 end
 
-liblz4 = library_dependency("liblz4", aliases = ["liblz4.so.1.8.1"]  validate = validate_lz4)
+liblz4 = library_dependency("liblz4", validate = validate_lz4)
 version = "1.8.1.2"
 
 suffix = "$(Libdl.dlext).1.8.1"
