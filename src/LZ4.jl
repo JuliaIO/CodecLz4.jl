@@ -1,6 +1,7 @@
 __precompile__()
 module LZ4
 
+
 depsjl = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
 if isfile(depsjl)
     include(depsjl)
@@ -17,6 +18,7 @@ import TranscodingStreams:
     Memory,
     Error
 
+include("lz4frame.jl")
 include("stream_compression.jl")
 
 end

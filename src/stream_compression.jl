@@ -1,5 +1,3 @@
-
-include("lz4frame.jl")
 using TranscodingStreams
 
 const BUF_SIZE = 16*1024

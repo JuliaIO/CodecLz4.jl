@@ -2,8 +2,41 @@
 # Automatically generated using Clang.jl wrap_c, version 0.0.0
 # docstrings copied from /usr/local/include/lz4frame.h
 
-include("orig_lz4.jl")
-include("lz4hc.jl")
+###########################
+ # PRIVATE DEFINITIONS : Do Not Export
+ # Do not use these definitions.
+ # They are exposed to allow static allocation of `LZ4_streamHC_t`.
+ # Using these definitions makes the code vulnerable to potential API break when upgrading LZ4
+############################
+const LZ4HC_DICTIONARY_LOGSIZE = 17
+const LZ4HC_MAXD = 1 << LZ4HC_DICTIONARY_LOGSIZE
+const LZ4HC_MAXD_MASK = LZ4HC_MAXD - 1
+const LZ4HC_HASH_LOG = 15
+const LZ4HC_HASHTABLESIZE = 1 << LZ4HC_HASH_LOG
+const LZ4HC_HASH_MASK = LZ4HC_HASHTABLESIZE - 1
+const LZ4_STREAMHCSIZE = 4LZ4HC_HASHTABLESIZE + 2LZ4HC_MAXD + 56
+const LZ4_STREAMHCSIZE_SIZET = floor(Int, LZ4_STREAMHCSIZE / sizeof(Csize_t))
+
+struct LZ4_streamHC_t
+    table::NTuple{LZ4_STREAMHCSIZE_SIZET, Csize_t}
+end
+
+const LZ4_MEMORY_USAGE = 14
+const LZ4_MAX_INPUT_SIZE = 0x7e000000
+
+const LZ4_HASHLOG = LZ4_MEMORY_USAGE - 2
+const LZ4_HASHTABLESIZE = 1 << LZ4_MEMORY_USAGE
+const LZ4_HASH_SIZE_U32 = 1 << LZ4_HASHLOG
+
+const LZ4_STREAMDECODESIZE_U64 = 4
+const LZ4_STREAMSIZE_U64 =((1 << (LZ4_MEMORY_USAGE-3)) + 4)
+
+struct LZ4_stream_t 
+    table::NTuple{LZ4_STREAMSIZE_U64, Culonglong}
+end
+struct LZ4_streamDecode_t 
+    table::NTuple{LZ4_STREAMDECODESIZE_U64, Culonglong}
+end
 
 # Constants
 const LZ4F_VERSION = 100
@@ -145,32 +178,6 @@ end
 function LZ4F_getErrorName(code::Csize_t)
     str = ccall((:LZ4F_getErrorName, liblz4), Cstring, (Csize_t,), code)
     unsafe_string(str)
-end
-
-function LZ4F_compressionLevel_max()
-    ccall((:LZ4F_compressionLevel_max, liblz4), Cint, ())
-end
-
-"""
-Returns the maximum possible size of a frame compressed with `LZ4F_compressFrame()` given `srcSize` content and preferences.
-Note : this result is only usable with `LZ4F_compressFrame()`, not with multi-segments compression.
-"""
-function LZ4F_compressFrameBound(srcSize::Csize_t, preferencesPtr::Ref{LZ4F_preferences_t})
-    ccall((:LZ4F_compressFrameBound, liblz4), Csize_t, (Csize_t, Ref{LZ4F_preferences_t}), srcSize, preferencesPtr)
-end
-
-"""
-Compress an entire `srcBuffer` into a valid LZ4 frame.
-`dstCapacity` MUST be >= `LZ4F_compressFrameBound(srcSize, preferencesPtr)`.
-The `LZ4F_preferences_t` structure is optional : you can provide `C_NULL` as argument. All preferences will be set to default.
-Returns the number of bytes written into `dstBuffer` or throws an error if it fails.
-"""
-function LZ4F_compressFrame(dstBuffer, dstCapacity::Csize_t, srcBuffer, srcSize::Csize_t, preferencesPtr::Ref{LZ4F_preferences_t})
-    ret = ccall((:LZ4F_compressFrame, liblz4), Csize_t, (Ptr{Void}, Csize_t, Ptr{Void}, Csize_t, Ref{LZ4F_preferences_t}), dstBuffer, dstCapacity, srcBuffer, srcSize, preferencesPtr)
-    if LZ4F_isError(ret)
-        error("LZ4F_compressFrame: " * LZ4F_getErrorName(ret))
-    end
-    ret
 end
 
 """

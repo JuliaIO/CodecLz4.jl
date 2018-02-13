@@ -1,4 +1,3 @@
-using LZ4
 using TranscodingStreams:
     TranscodingStream,
     TranscodingStreams,

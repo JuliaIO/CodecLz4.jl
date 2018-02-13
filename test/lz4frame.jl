@@ -1,4 +1,9 @@
-@testset "lz4framed" begin
+depsjl = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
+
+include(depsjl)
+include("../src/lz4frame.jl")
+
+@testset "lz4frame" begin
      testIn = "Far out in the uncharted backwaters of the unfashionable end of the west-
  ern  spiral  arm  of  the  Galaxy  lies  a  small  unregarded  yellow  sun."
 	test_size = convert(UInt, length(testIn))
@@ -104,32 +109,6 @@
 		end
 	end
 
-	@testset "CompressFrame" begin
-		maxCompression = LZ4F_compressionLevel_max()
-	    @test  maxCompression == 12
-	    frameprefs = Ref(LZ4F_preferences_t(LZ4F_frameInfo_t(),maxCompression,0,(0,0,0,0)))
-	    
-	    result = LZ4F_compressFrameBound(test_size, frameprefs)
-	    @test result > 0
-
-	    result += LZ4F_HEADER_SIZE_MAX
-
-	    compbuffer = Vector{UInt8}(result)
-		result = LZ4F_compressFrame(compbuffer, result, pointer(testIn), test_size, frameprefs) 
-		@test !LZ4F_isError(result)
-
-		test_decompress(result, compbuffer)
-		
-	end
-
-	@testset "CompressFrameInvalid" begin
-		frameprefs = Ref(LZ4F_preferences_t(LZ4F_frameInfo_t()))
-
-	    compbuffer = Vector{UInt8}(1280)
-		@test_throws ErrorException LZ4F_compressFrame(compbuffer, (UInt)(2), pointer(testIn), test_size, frameprefs) 
-		
-	end
-
 	@testset "Compress" begin
 		ctx = Ref{Ptr{LZ4F_cctx}}(C_NULL)
 		err = LZ4F_isError(LZ4F_createCompressionContext(ctx, version))
@@ -228,7 +207,7 @@
 		err = LZ4F_isError(LZ4F_createCompressionContext(ctx, version))
 		@test !err
 	  	opts = Ref(LZ4F_compressOptions_t(1,(0,0,0)))
-	    prefs = Ref(LZ4F_preferences_t(LZ4F_frameInfo_t(),LZ4F_compressionLevel_max(),0,(0,0,0,0)))
+	    prefs = Ref(LZ4F_preferences_t(LZ4F_frameInfo_t(),20,0,(0,0,0,0)))
 	    
 		bound = LZ4F_compressBound(test_size, prefs)
 		@test bound > 0
