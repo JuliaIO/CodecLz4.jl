@@ -17,6 +17,7 @@ mutable struct LZ4Compressor <: TranscodingStreams.Codec
     ctx::Ref{Ptr{LZ4F_cctx}}
     prefs::Ref{LZ4F_preferences_t}
     header::Memory
+    write_header::Bool
 end
 
 """
@@ -42,7 +43,7 @@ function LZ4Compressor(; kwargs...)
     ctx = Ref{Ptr{LZ4F_cctx}}(C_NULL)
     frame = LZ4F_frameInfo_t(; y...)
     prefs = Ref(LZ4F_preferences_t(frame; x...))
-    return LZ4Compressor(ctx, prefs, Memory(pointer(""), 0))
+    return LZ4Compressor(ctx, prefs, Memory(Vector{UInt8}(LZ4F_HEADER_SIZE_MAX)), false)
 end
 
 const LZ4CompressorStream{S} = TranscodingStream{LZ4Compressor,S} where S<:IO
@@ -92,10 +93,11 @@ Starts processing with the codec
 Creates the LZ4F header to be written to the output.
 """
 function TranscodingStreams.startproc(codec::LZ4Compressor, mode::Symbol, error::Error)::Symbol
-    header = Vector{UInt8}(LZ4F_HEADER_SIZE_MAX)
     try
+        header = Vector{UInt8}(LZ4F_HEADER_SIZE_MAX)
         headerSize = LZ4F_compressBegin(codec.ctx[], header, convert(Csize_t, LZ4F_HEADER_SIZE_MAX), codec.prefs)
-        codec.header = Memory(pointer(header), headerSize)
+        codec.header = Memory(resize!(header, headerSize))
+        codec.write_header = true
         :ok
     catch err
         error[] = err
@@ -111,10 +113,10 @@ The LZ4 compression algorithm may simply buffer the input data a full frame can 
 function TranscodingStreams.process(codec::LZ4Compressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
     data_read = 0
     data_written = 0
-    if codec.header.size > 0
+    if codec.write_header
         unsafe_copy!(output.ptr, codec.header.ptr, codec.header.size)
         data_written = codec.header.size
-        codec.header = Memory(pointer(""), 0)
+        codec.write_header = false
     end
 
     try
