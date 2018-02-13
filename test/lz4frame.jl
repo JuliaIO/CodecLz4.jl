@@ -10,8 +10,8 @@ include("../src/lz4frame.jl")
     version = LZ4F_getVersion()
 
     @testset "Errors" begin
-        ERROR_GENERIC = (UInt)(18446744073709551615)
-        no_error = (UInt)(0)
+        ERROR_GENERIC = UInt(18446744073709551615)
+        no_error = UInt(0)
 
         @test !LZ4F_isError(no_error)
         @test LZ4F_getErrorName(no_error) == "Unspecified error code"
@@ -71,9 +71,9 @@ include("../src/lz4frame.jl")
             @test srcsize[] > 0
 
             offset = srcsize[]
-            srcsize[]=origsize-offset
+            srcsize[] = origsize - offset
 
-            @test_nowarn result = LZ4F_decompress(dctx[], decbuffer, dstsize, pointer(buffer)+offset, srcsize, C_NULL)
+            @test_nowarn result = LZ4F_decompress(dctx[], decbuffer, dstsize, pointer(buffer) + offset, srcsize, C_NULL)
             @test srcsize[] > 0
 
             @test testIn == unsafe_string(pointer(decbuffer))
@@ -96,13 +96,13 @@ include("../src/lz4frame.jl")
 
             LZ4F_createDecompressionContext(dctx, version)
 
-            buffer[1:LZ4F_HEADER_SIZE_MAX] =0x10
+            buffer[1:LZ4F_HEADER_SIZE_MAX] = 0x10
             @test_throws ErrorException LZ4F_getFrameInfo(dctx[], frameinfo, buffer, srcsize)
 
             offset = srcsize[]
-            srcsize[]=origsize-offset
+            srcsize[] = origsize - offset
 
-            @test_throws ErrorException LZ4F_decompress(dctx[], decbuffer, dstsize, pointer(buffer)+offset, srcsize, C_NULL)
+            @test_throws ErrorException LZ4F_decompress(dctx[], decbuffer, dstsize, pointer(buffer) + offset, srcsize, C_NULL)
 
             result = LZ4F_freeDecompressionContext(dctx[])
             @test !LZ4F_isError(result)
@@ -120,7 +120,7 @@ include("../src/lz4frame.jl")
         @test bound > 0
 
         bufsize = bound + LZ4F_HEADER_SIZE_MAX
-        buffer = Vector{UInt8}(ceil(Int, bound/8))
+        buffer = Vector{UInt8}(ceil(Int, bound / 8))
 
         @test_nowarn result = LZ4F_compressBegin(ctx[], buffer, bufsize, prefs)
 
@@ -132,7 +132,7 @@ include("../src/lz4frame.jl")
 
         offset += result
         @test_nowarn result = LZ4F_compressEnd(ctx[], pointer(buffer)+offset, bufsize - offset, C_NULL)
-        @test result>0
+        @test result > 0
 
         offset += result
 
@@ -167,9 +167,9 @@ include("../src/lz4frame.jl")
         @test bound > 0
 
         bufsize = bound + LZ4F_HEADER_SIZE_MAX
-        buffer = Vector{UInt8}(ceil(Int, bound/8))
+        buffer = Vector{UInt8}(ceil(Int, bound / 8))
 
-        @test_throws ErrorException LZ4F_compressBegin(ctx[], buffer, (UInt)(2), prefs)
+        @test_throws ErrorException LZ4F_compressBegin(ctx[], buffer, UInt(2), prefs)
         @test_throws ErrorException LZ4F_compressUpdate(ctx[], pointer(buffer), bufsize, pointer(testIn), test_size, C_NULL)
 
         result = LZ4F_freeCompressionContext(ctx[])
@@ -184,8 +184,8 @@ include("../src/lz4frame.jl")
         offset = result
         @test_nowarn result = LZ4F_compressUpdate(ctx[], pointer(buffer) + offset, bufsize - offset, pointer(testIn), test_size, C_NULL)
 
-        @test_throws ErrorException LZ4F_flush(ctx[], pointer(buffer), (UInt)(2), C_NULL)
-        @test_throws ErrorException LZ4F_compressEnd(ctx[], pointer(buffer), (UInt)(2), C_NULL)
+        @test_throws ErrorException LZ4F_flush(ctx[], pointer(buffer), UInt(2), C_NULL)
+        @test_throws ErrorException LZ4F_compressEnd(ctx[], pointer(buffer), UInt(2), C_NULL)
 
         result = LZ4F_freeCompressionContext(ctx[])
         @test !LZ4F_isError(result)
@@ -206,14 +206,14 @@ include("../src/lz4frame.jl")
         ctx = Ref{Ptr{LZ4F_cctx}}(C_NULL)
         err = LZ4F_isError(LZ4F_createCompressionContext(ctx, version))
         @test !err
-        opts = Ref(LZ4F_compressOptions_t(1,(0,0,0)))
-        prefs = Ref(LZ4F_preferences_t(LZ4F_frameInfo_t(),20,0,(0,0,0,0)))
+        opts = Ref(LZ4F_compressOptions_t(1, (0, 0, 0)))
+        prefs = Ref(LZ4F_preferences_t(LZ4F_frameInfo_t(), 20, 0, (0, 0, 0, 0)))
 
         bound = LZ4F_compressBound(test_size, prefs)
         @test bound > 0
 
         bufsize = bound + LZ4F_HEADER_SIZE_MAX
-        buffer = Vector{UInt8}(ceil(Int, bound/8))
+        buffer = Vector{UInt8}(ceil(Int, bound / 8))
 
         @test_nowarn result = LZ4F_compressBegin(ctx[], buffer, bufsize, prefs)
 
@@ -221,11 +221,11 @@ include("../src/lz4frame.jl")
         @test_nowarn result = LZ4F_compressUpdate(ctx[], pointer(buffer) + offset, bufsize - offset, pointer(testIn), test_size, opts)
 
         offset += result
-        @test_nowarn result = LZ4F_flush(ctx[], pointer(buffer)+offset, bufsize - offset, opts)
+        @test_nowarn result = LZ4F_flush(ctx[], pointer(buffer) + offset, bufsize - offset, opts)
 
         offset += result
-        @test_nowarn result = LZ4F_compressEnd(ctx[], pointer(buffer)+offset, bufsize - offset, opts)
-        @test result>0
+        @test_nowarn result = LZ4F_compressEnd(ctx[], pointer(buffer) + offset, bufsize - offset, opts)
+        @test result > 0
 
         offset += result
 

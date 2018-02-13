@@ -20,46 +20,48 @@ mutable struct LZ4Compressor <: TranscodingStreams.Codec
 end
 
 """
-    LZ4Compressor(;blocksizeid::UInt32=$(LZ4F_default), blockmode::Cuint=$(LZ4F_blockLinked), 
-        contentchecksumflag::Cuint=$(LZ4F_noContentChecksum), frametype::Cuint=$(LZ4F_frame), contentsize::Culonglong=0, 
-        blockchecksumflag::Cuint=$(LZ4F_noBlockChecksum), compressionlevel::Cint=0, autoflush::Cuint=0)
+    LZ4Compressor(; kwargs...)
+
 Creates an LZ4 compression codec.
 
-Arguments:
-- `blocksizeid`: max64KB, max256KB, max1MB, or max4MB (4..7) (0 for default)
-- `blockmode`:  0 for LZ4F_blockLinked or 1 for LZ4F_blockIndependent
-- `contentchecksumflag`: if 1, frame is terminated with a 32-bits checksum of decompressed data (0..1)
-- `frametype`:  0 for LZ4F_frame or 1 for LZ4F_skippableFrame
-- `contentsize`: Size of uncompressed content (0 for unknown)
-- `blockchecksumflag`: if 1, each block is followed by a checksum of block's compressed data (0..1)
-- `compressionlevel`: compression level (-1..12)
-- `autoflush`: 1 == always flush (0..1)
+# Keywords
+- `blocksizeid::UInt32=$(LZ4F_default)`: max64KB, max256KB, max1MB, or max4MB (4..7) (0 for default)
+- `blockmodeCuint=$(LZ4F_blockLinked)`:  0 for LZ4F_blockLinked or 1 for LZ4F_blockIndependent
+- `contentchecksumflag::Cuint=$(LZ4F_noContentChecksum)`: if 1, frame is terminated with a
+    32-bits checksum of decompressed data (0..1)
+- `frametype::Cuint=$(LZ4F_frame)`:  0 for LZ4F_frame or 1 for LZ4F_skippableFrame
+- `contentsize::Culonglong=0`: Size of uncompressed content (0 for unknown)
+- `blockchecksumflag::Cuint=$(LZ4F_noBlockChecksum)`: if 1, each block is followed by a
+    checksum of block's compressed data (0..1)
+- `compressionlevel::Cint=0`: compression level (-1..12)
+- `autoflush::Cuint=0`: 1 == always flush (0..1)
 """
 function LZ4Compressor(; kwargs...)
     x, y = splitkwargs(kwargs, (:compressionlevel, :autoflush))
-    
+
     ctx = Ref{Ptr{LZ4F_cctx}}(C_NULL)
     frame = LZ4F_frameInfo_t(; y...)
     prefs = Ref(LZ4F_preferences_t(frame; x...))
     return LZ4Compressor(ctx, prefs, Memory(pointer(""), 0))
 end
 
-const LZ4CompressorStream{S} = TranscodingStream{LZ4Compressor,S} where S<:IO 
+const LZ4CompressorStream{S} = TranscodingStream{LZ4Compressor,S} where S<:IO
 
 """
     LZ4CompressorStream(stream::IO; kwargs...)
+
 Creates an LZ4 compression stream. See `LZ4Compressor()` and `TranscodingStream()` for arguments.
 """
 function LZ4CompressorStream(stream::IO; kwargs...)
     x, y = splitkwargs(kwargs, (:blocksizeid, :blockmode, :contentchecksumflag, :blockchecksumflag, :frametype, :contentsize, :compressionlevel, :autoflush))
-    return TranscodingStream(LZ4Compressor(;x...), stream; y...)
+    return TranscodingStream(LZ4Compressor(; x...), stream; y...)
 end
 
 """
 Returns the expected size of the transcoded data.
 """
 function TranscodingStreams.expectedsize(codec::LZ4Compressor, input::Memory)::Int
-    convert(Int, LZ4F_compressBound(input.size, codec.prefs))+ LZ4F_HEADER_SIZE_MAX + LZ4_FOOTER_SIZE
+    LZ4F_compressBound(input.size, codec.prefs) + LZ4F_HEADER_SIZE_MAX + LZ4_FOOTER_SIZE
 end
 
 """
@@ -104,23 +106,23 @@ end
 """
 Compresses the data from `input` and writes to `output`.
 The LZ4 compression algorithm may simply buffer the input data a full frame can be produced, so `data_written` may be 0.
-`flush()` may be used to force `output` to be written. 
+`flush()` may be used to force `output` to be written.
 """
 function TranscodingStreams.process(codec::LZ4Compressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
     data_read = 0
     data_written = 0
-    if codec.header.size>0
+    if codec.header.size > 0
         unsafe_copy!(output.ptr, codec.header.ptr, codec.header.size)
         data_written = codec.header.size
-        codec.header = Memory(pointer(""),0)
+        codec.header = Memory(pointer(""), 0)
     end
 
     try
         if input.size == 0
-            data_written += LZ4F_compressEnd(codec.ctx[], output.ptr+data_written, output.size-data_written, C_NULL)
+            data_written += LZ4F_compressEnd(codec.ctx[], output.ptr + data_written, output.size - data_written, C_NULL)
             (data_read, data_written, :end)
         else
-            data_written += LZ4F_compressUpdate(codec.ctx[], output.ptr+data_written, output.size-data_written, input.ptr, input.size, C_NULL)
+            data_written += LZ4F_compressUpdate(codec.ctx[], output.ptr + data_written, output.size - data_written, input.ptr, input.size, C_NULL)
             (input.size, data_written, :ok)
         end
 
@@ -137,6 +139,7 @@ end
 
 """
     LZ4Compressor()
+
 Creates an LZ4 decompression codec.
 """
 function LZ4Decompressor()
@@ -148,6 +151,7 @@ const LZ4DecompressorStream{S} = TranscodingStream{LZ4Decompressor,S} where S<:I
 
 """
     LZ4CompressorStream(stream::IO; kwargs...)
+
 Creates an LZ4 decompression stream. See `TranscodingStream()` for arguments.
 """
 function LZ4DecompressorStream(stream::IO; kwargs...)
@@ -177,7 +181,7 @@ If the input data is not properly formatted this function will throw an error.
 function TranscodingStreams.process(codec::LZ4Decompressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
     data_read = 0
     data_written = 0
-    
+
     try
         if input.size == 0
             (data_read, data_written, :end)

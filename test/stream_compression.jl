@@ -1,10 +1,5 @@
-using TranscodingStreams:
-    TranscodingStream,
-    TranscodingStreams,
-    Error,
-    Memory,
-    test_roundtrip_fileio,
-    test_roundtrip_transcode
+using TranscodingStreams: TranscodingStream, TranscodingStreams, Error, Memory,
+    test_roundtrip_fileio, test_roundtrip_transcode
 
 @testset "transcoding" begin
 
@@ -18,10 +13,10 @@ malesuada sem interdum sed. Vestibulum ante ipsum primis in faucibus orci luctus
 et ultrices posuere cubilia Curae; Etiam volutpat, risus nec gravida ultricies,
 erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
 """
-    
+
     compressed = transcode(LZ4Compressor, text)
     @test sizeof(compressed) < sizeof(text)
-    
+
     corrupted = copy(compressed)
     corrupted[1] = 0x00
     file = IOBuffer(corrupted)
@@ -36,7 +31,7 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     test_roundtrip_fileio(LZ4Compressor, LZ4Decompressor)
     test_roundtrip_transcode(LZ4Compressor, LZ4Decompressor)
 
-        
+
     file = IOBuffer(text)
     stream = LZ4DecompressorStream(LZ4CompressorStream(file))
     flush(stream)
@@ -46,9 +41,9 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     close(file)
 
     file = IOBuffer(text)
-    stream = LZ4DecompressorStream(LZ4CompressorStream(file; blocksizeid = (UInt32)(4)))
+    stream = LZ4DecompressorStream(LZ4CompressorStream(file; blocksizeid = UInt32(4)))
     flush(stream)
-    
+
     @test hash(read(stream)) == hash(text)
     close(stream)
     close(file)
@@ -57,8 +52,8 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     output = Memory(Vector{UInt8}(1280))
     not_initialized = LZ4Compressor()
     @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
-    @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0,0,:error)
-   
+    @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0, 0, :error)
+
 
     file = IOBuffer("")
     stream = LZ4DecompressorStream(LZ4CompressorStream(file))
