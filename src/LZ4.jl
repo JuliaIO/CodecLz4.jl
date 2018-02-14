@@ -4,6 +4,9 @@ module LZ4
 using TranscodingStreams: TranscodingStreams, TranscodingStream, Memory, Error
 
 export LZ4Compressor, LZ4CompressorStream, LZ4Decompressor, LZ4DecompressorStream
+export BlockSizeID, default_size, max64KB, max256KB, max1MB, max4MB
+export BlockMode, block_linked, block_independent
+export FrameType, normal_frame, skippable_frame
 
 depsjl = joinpath(@__DIR__, "..", "deps", "deps.jl")
 if isfile(depsjl)
