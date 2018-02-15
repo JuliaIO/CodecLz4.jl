@@ -90,12 +90,12 @@ struct LZ4F_frameInfo_t
 end
 
 function LZ4F_frameInfo_t(;
-blocksizeid::BlockSizeID=default_size,
-blockmode::BlockMode=block_linked,
-contentchecksum::Bool=false,
-frametype::FrameType=normal_frame,
-contentsize::Int64=0, 
-blockchecksum::Bool=false
+    blocksizeid::BlockSizeID=default_size,
+    blockmode::BlockMode=block_linked,
+    contentchecksum::Bool=false,
+    frametype::FrameType=normal_frame,
+    contentsize::Int64=0, 
+    blockchecksum::Bool=false,
 )
     LZ4F_frameInfo_t(blocksizeid, blockmode, Cuint(contentchecksum), frametype, contentsize, Cuint(0), Cuint(blockchecksum))
 end
