@@ -26,16 +26,16 @@ end
 Creates an LZ4 compression codec.
 
 # Keywords
-- `blocksizeid::BlockSizeID=default_size`: max64KB, max256KB, max1MB, or max4MB or default_size
-- `blockmode::BlockMode=block_linked`:  block_linked or 1 for block_independent
-- `contentchecksum::Bool=false`: if true, frame is terminated with a
+- `blocksizeid::BlockSizeID=default_size`: `max64KB`, `max256KB`, `max1MB`, or `max4MB` or `default_size`
+- `blockmode::BlockMode=block_linked`:  `block_linked` or `block_independent`
+- `contentchecksum::Bool=false`: if `true`, frame is terminated with a
     32-bits checksum of decompressed data
-- `frametype::FrameType=normal_frame)`:  normal_frame or skippable_frame
+- `frametype::FrameType=normal_frame)`:  `normal_frame` or `skippable_frame`
 - `contentsize::UInt64=0`: Size of uncompressed content (0 for unknown)
-- `blockchecksumflag::Bool=false`: if true, each block is followed by a
+- `blockchecksumflag::Bool=false`: if `true`, each block is followed by a
     checksum of block's compressed data
-- `compressionlevel::Int=0`: compression level (-1..12)
-- `autoflush::Bool=false`: always flush if true
+- `compressionlevel::Integer=0`: compression level (-1..12)
+- `autoflush::Bool=false`: always flush if `true`
 """
 function LZ4Compressor(; kwargs...)
     x, y = splitkwargs(kwargs, (:compressionlevel, :autoflush))

@@ -89,13 +89,16 @@ struct LZ4F_frameInfo_t
     blockChecksumFlag::Cuint
 end
 
-function LZ4F_frameInfo_t(; blocksizeid::BlockSizeID=default_size, blockmode::BlockMode=block_linked, 
-    contentchecksum::Bool=false, frametype::FrameType=normal_frame, contentsize::Int64=0, 
-    blockchecksum::Bool=false) 
+function LZ4F_frameInfo_t(;
+    blocksizeid::BlockSizeID=default_size,
+    blockmode::BlockMode=block_linked,
+    contentchecksum::Bool=false,
+    frametype::FrameType=normal_frame,
+    contentsize::Int64=0, 
+    blockchecksum::Bool=false
+    ) 
     
-    blockchecksumflag = blockchecksum? LZ4F_blockChecksumEnabled:LZ4F_noBlockChecksum
-    contentchecksumflag = contentchecksum? LZ4F_contentChecksumEnabled:LZ4F_noContentChecksum
-    LZ4F_frameInfo_t(blocksizeid, blockmode, contentchecksumflag, frametype, contentsize, Cuint(0), blockchecksumflag)
+    LZ4F_frameInfo_t(blocksizeid, blockmode, Cuint(contentchecksum), frametype, contentsize, Cuint(0), Cuint(blockchecksum))
 end
 
 struct LZ4F_preferences_t
@@ -105,8 +108,8 @@ struct LZ4F_preferences_t
     reserved::NTuple{4, Cuint}        
 end
 
-function LZ4F_preferences_t(frame_info::LZ4F_frameInfo_t; compressionlevel::Int=0, autoflush::Bool=false)
-    LZ4F_preferences_t(frame_info, Cint(compressionlevel), autoflush? Cuint(1):Cuint(0), (0,0,0,0))
+function LZ4F_preferences_t(frame_info::LZ4F_frameInfo_t; compressionlevel::Integer=0, autoflush::Bool=false)
+    LZ4F_preferences_t(frame_info, Cint(compressionlevel), Cuint(autoflush), (0,0,0,0))
 end
 
 struct LZ4F_CDict
