@@ -9,11 +9,9 @@
         @test !LZ4.LZ4F_isError(no_error)
         @test LZ4.LZ4F_getErrorName(no_error) == "Unspecified error code"
         
-        if Sys.WORD_SIZE == 64
-            ERROR_GENERIC = UInt(18446744073709551615)
-            @test LZ4.LZ4F_isError(ERROR_GENERIC)
-            @test LZ4.LZ4F_getErrorName(ERROR_GENERIC) == "ERROR_GENERIC"
-        end
+        ERROR_GENERIC = typemax(UInt)
+        @test LZ4.LZ4F_isError(ERROR_GENERIC)
+        @test LZ4.LZ4F_getErrorName(ERROR_GENERIC) == "ERROR_GENERIC"
     end
 
     @testset "CompressionCtx" begin
