@@ -1,5 +1,5 @@
 __precompile__()
-module LZ4
+module CodecLz4
 
 using TranscodingStreams: TranscodingStreams, TranscodingStream, Memory, Error
 
@@ -13,7 +13,7 @@ depsjl = joinpath(@__DIR__, "..", "deps", "deps.jl")
 if isfile(depsjl)
     include(depsjl)
 else
-    error("LZ4 not properly installed. Please run Pkg.build(\"LZ4\") and restart julia")
+    error("CodecLz4 not properly installed. Please run Pkg.build(\"CodecLz4\") and restart julia")
 end
 
 include("lz4frame.jl")
