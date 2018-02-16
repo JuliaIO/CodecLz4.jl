@@ -68,7 +68,7 @@ end
 Returns the minimum output size of `process`.
 """
 function TranscodingStreams.minoutsize(codec::LZ4Compressor, input::Memory)::Int
-    LZ4F_HEADER_SIZE_MAX
+    LZ4F_HEADER_SIZE_MAX + LZ4_FOOTER_SIZE
 end
 
 """
