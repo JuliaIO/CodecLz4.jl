@@ -38,7 +38,7 @@
             contentchecksum = true,
             blockchecksum = true,
             frametype = skippable_frame,
-            contentsize = Int64(100)
+            contentsize = 100
             )
 
         @test frame.blockSizeID == Cuint(4)
