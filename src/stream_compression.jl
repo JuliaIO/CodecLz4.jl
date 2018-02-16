@@ -114,6 +114,10 @@ function TranscodingStreams.process(codec::LZ4Compressor, input::Memory, output:
     data_read = 0
     data_written = 0
     if codec.write_header
+        if output.size < codec.header.size
+            error[] = ErrorException("Output buffer too small for header.")
+            return (data_read, data_written, :error)
+        end
         unsafe_copy!(output.ptr, codec.header.ptr, codec.header.size)
         data_written = codec.header.size
         codec.write_header = false

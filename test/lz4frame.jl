@@ -5,12 +5,11 @@
     version = LZ4.LZ4F_getVersion()
 
     @testset "Errors" begin
-        ERROR_GENERIC = UInt(18446744073709551615)
         no_error = UInt(0)
-
         @test !LZ4.LZ4F_isError(no_error)
         @test LZ4.LZ4F_getErrorName(no_error) == "Unspecified error code"
-
+        
+        ERROR_GENERIC = typemax(UInt)
         @test LZ4.LZ4F_isError(ERROR_GENERIC)
         @test LZ4.LZ4F_getErrorName(ERROR_GENERIC) == "ERROR_GENERIC"
     end
@@ -71,7 +70,7 @@
             @test_nowarn result = LZ4.LZ4F_decompress(dctx[], decbuffer, dstsize, pointer(buffer) + offset, srcsize, C_NULL)
             @test srcsize[] > 0
 
-            @test testIn == unsafe_string(pointer(decbuffer))
+            @test testIn == unsafe_string(pointer(decbuffer), dstsize[])
 
             result = LZ4.LZ4F_freeDecompressionContext(dctx[])
             @test !LZ4.LZ4F_isError(result)
