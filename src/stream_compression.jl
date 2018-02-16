@@ -31,7 +31,7 @@ Creates an LZ4 compression codec.
 - `contentchecksum::Bool=false`: if `true`, frame is terminated with a
     32-bits checksum of decompressed data
 - `frametype::FrameType=normal_frame)`:  `normal_frame` or `skippable_frame`
-- `contentsize::UInt64=0`: Size of uncompressed content (0 for unknown)
+- `contentsize::Integer=0`: Size of uncompressed content (0 for unknown)
 - `blockchecksumflag::Bool=false`: if `true`, each block is followed by a
     checksum of block's compressed data
 - `compressionlevel::Integer=0`: compression level (-1..12)

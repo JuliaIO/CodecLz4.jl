@@ -94,10 +94,10 @@ function LZ4F_frameInfo_t(;
     blockmode::BlockMode=block_linked,
     contentchecksum::Bool=false,
     frametype::FrameType=normal_frame,
-    contentsize::Int64=0, 
+    contentsize::Integer=0, 
     blockchecksum::Bool=false,
 )
-    LZ4F_frameInfo_t(blocksizeid, blockmode, Cuint(contentchecksum), frametype, contentsize, Cuint(0), Cuint(blockchecksum))
+    LZ4F_frameInfo_t(blocksizeid, blockmode, Cuint(contentchecksum), frametype, Culonglong(contentsize), Cuint(0), Cuint(blockchecksum))
 end
 
 struct LZ4F_preferences_t

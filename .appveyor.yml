@@ -33,10 +33,10 @@ install:
 build_script:
   # Need to convert from shallow to complete for Pkg.clone to work
   - IF EXIST .git\shallow (git fetch --unshallow)
-  - C:\projects\julia\bin\julia -e "versioninfo(); Pkg.clone(pwd(), \"LZ4\"); Pkg.build(\"LZ4\")"
+  - C:\projects\julia\bin\julia -e "versioninfo(); Pkg.clone(pwd(), \"CodecLz4\"); Pkg.build(\"CodecLz4\")"
 
 test_script:
-  - C:\projects\julia\bin\julia -e "Pkg.test(\"LZ4\"; coverage=true)"
+  - C:\projects\julia\bin\julia -e "Pkg.test(\"CodecLz4\"; coverage=true)"
 
 after_test:
-  - C:\projects\julia\bin\julia -e "cd(Pkg.dir(\"LZ4\")); Pkg.add(\"Coverage\"); using Coverage; Codecov.submit(process_folder())"
+  - C:\projects\julia\bin\julia -e "cd(Pkg.dir(\"CodecLz4\")); Pkg.add(\"Coverage\"); using Coverage; Codecov.submit(process_folder())"

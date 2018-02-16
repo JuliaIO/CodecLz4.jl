@@ -1,7 +1,7 @@
 using Base.Test
-using LZ4
+using CodecLz4
 
-@testset "LZ4.jl" begin
+@testset "CodecLz4.jl" begin
     include("lz4frame.jl")
     include("stream_compression.jl")
 end
