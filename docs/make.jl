@@ -1,7 +1,7 @@
-using Documenter, LZ4
+using Documenter, CodecLz4
 
 makedocs(;
-    modules=[LZ4],
+    modules=[CodecLz4],
     format=:html,
     pages=[
         "Home" => "index.md",
