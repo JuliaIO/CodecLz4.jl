@@ -26,20 +26,19 @@ end
 Creates an LZ4 compression codec.
 
 # Keywords
-- `blocksizeid::UInt32=$(LZ4F_default)`: max64KB, max256KB, max1MB, or max4MB (4..7) (0 for default)
-- `blockmodeCuint=$(LZ4F_blockLinked)`:  0 for LZ4F_blockLinked or 1 for LZ4F_blockIndependent
-- `contentchecksumflag::Cuint=$(LZ4F_noContentChecksum)`: if 1, frame is terminated with a
-    32-bits checksum of decompressed data (0..1)
-- `frametype::Cuint=$(LZ4F_frame)`:  0 for LZ4F_frame or 1 for LZ4F_skippableFrame
-- `contentsize::Culonglong=0`: Size of uncompressed content (0 for unknown)
-- `blockchecksumflag::Cuint=$(LZ4F_noBlockChecksum)`: if 1, each block is followed by a
-    checksum of block's compressed data (0..1)
-- `compressionlevel::Cint=0`: compression level (-1..12)
-- `autoflush::Cuint=0`: 1 == always flush (0..1)
+- `blocksizeid::BlockSizeID=default_size`: `max64KB`, `max256KB`, `max1MB`, or `max4MB` or `default_size`
+- `blockmode::BlockMode=block_linked`:  `block_linked` or `block_independent`
+- `contentchecksum::Bool=false`: if `true`, frame is terminated with a
+    32-bits checksum of decompressed data
+- `frametype::FrameType=normal_frame)`:  `normal_frame` or `skippable_frame`
+- `contentsize::UInt64=0`: Size of uncompressed content (0 for unknown)
+- `blockchecksumflag::Bool=false`: if `true`, each block is followed by a
+    checksum of block's compressed data
+- `compressionlevel::Integer=0`: compression level (-1..12)
+- `autoflush::Bool=false`: always flush if `true`
 """
 function LZ4Compressor(; kwargs...)
     x, y = splitkwargs(kwargs, (:compressionlevel, :autoflush))
-
     ctx = Ref{Ptr{LZ4F_cctx}}(C_NULL)
     frame = LZ4F_frameInfo_t(; y...)
     prefs = Ref(LZ4F_preferences_t(frame; x...))

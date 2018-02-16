@@ -34,7 +34,7 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     close(file)
 
     file = IOBuffer(text)
-    stream = LZ4DecompressorStream(LZ4CompressorStream(file; blocksizeid = UInt32(4)))
+    stream = LZ4DecompressorStream(LZ4CompressorStream(file; blocksizeid = max64KB))
     flush(stream)
 
     @test hash(read(stream)) == hash(text)

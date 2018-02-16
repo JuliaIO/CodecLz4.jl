@@ -14,6 +14,49 @@
         @test LZ4.LZ4F_getErrorName(ERROR_GENERIC) == "ERROR_GENERIC"
     end
 
+    @testset "keywords" begin
+   
+        frame = LZ4.LZ4F_frameInfo_t()
+        @test frame.blockSizeID == Cuint(default_size)
+        @test frame.blockMode == Cuint(block_linked)
+        @test frame.contentChecksumFlag == Cuint(0)
+        @test frame.frameType == Cuint(normal_frame)
+        @test frame.contentSize == Culonglong(0)
+        @test frame.dictID == Cuint(0)
+        @test frame.blockChecksumFlag == Cuint(0)
+
+        prefs = LZ4.LZ4F_preferences_t(frame)
+
+        @test prefs.frameInfo == frame
+        @test prefs.compressionLevel == Cint(0)
+        @test prefs.autoFlush == Cuint(0)
+        @test prefs.reserved == (Cuint(0), Cuint(0), Cuint(0), Cuint(0))
+
+        frame = LZ4.LZ4F_frameInfo_t(
+            blocksizeid = max64KB,
+            blockmode = block_independent,
+            contentchecksum = true,
+            blockchecksum = true,
+            frametype = skippable_frame,
+            contentsize = 100
+            )
+
+        @test frame.blockSizeID == Cuint(4)
+        @test frame.blockMode == Cuint(1)
+        @test frame.contentChecksumFlag == Cuint(1)
+        @test frame.frameType == Cuint(1)
+        @test frame.contentSize == Culonglong(100)
+        @test frame.blockChecksumFlag == Cuint(1)
+
+        prefs = LZ4.LZ4F_preferences_t(frame, compressionlevel=5, autoflush = true)
+
+        @test prefs.frameInfo == frame
+        @test prefs.compressionLevel == Cint(5)
+        @test prefs.autoFlush == Cuint(1)
+        @test prefs.reserved == (Cuint(0), Cuint(0), Cuint(0), Cuint(0))
+
+    end
+
     @testset "CompressionCtx" begin
         ctx = Ref{Ptr{LZ4.LZ4F_cctx}}(C_NULL)
 

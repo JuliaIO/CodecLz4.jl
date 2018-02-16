@@ -65,13 +65,22 @@ const LZ4F_blockChecksumEnabled = (UInt32)(1)
 const LZ4F_frame = (UInt32)(0)
 const LZ4F_skippableFrame = (UInt32)(1)
 
+@enum BlockSizeID::Cuint default_size = 0 max64KB = 4 max256KB = 5 max1MB = 6 max4MB = 7
+@enum BlockMode::Cuint block_linked = 0 block_independent = 1
+@enum FrameType::Cuint normal_frame = 0 skippable_frame = 1
+
 struct LZ4F_compressOptions_t
     stableSrc::Cuint
     reserved::NTuple{3, Cuint}
 end
 
+struct LZ4F_decompressOptions_t
+    stableDst::Cuint
+    reserved::NTuple{3, Cuint}
+end
+
 struct LZ4F_frameInfo_t
-    blockSizeID::UInt32
+    blockSizeID::Cuint
     blockMode::Cuint      
     contentChecksumFlag::Cuint
     frameType::Cuint
@@ -80,11 +89,15 @@ struct LZ4F_frameInfo_t
     blockChecksumFlag::Cuint
 end
 
-function LZ4F_frameInfo_t(; blocksizeid::UInt32=LZ4F_default, blockmode::Cuint=LZ4F_blockLinked, 
-    contentchecksumflag::Cuint=LZ4F_noContentChecksum, frametype::Cuint=LZ4F_frame, contentsize::Culonglong=(Culonglong)(0), 
-    blockchecksumflag::Cuint=LZ4F_noBlockChecksum) 
-
-    LZ4F_frameInfo_t(blocksizeid, blockmode, contentchecksumflag, frametype, contentsize, (UInt)(0), blockchecksumflag)
+function LZ4F_frameInfo_t(;
+    blocksizeid::BlockSizeID=default_size,
+    blockmode::BlockMode=block_linked,
+    contentchecksum::Bool=false,
+    frametype::FrameType=normal_frame,
+    contentsize::Int64=0, 
+    blockchecksum::Bool=false,
+)
+    LZ4F_frameInfo_t(blocksizeid, blockmode, Cuint(contentchecksum), frametype, contentsize, Cuint(0), Cuint(blockchecksum))
 end
 
 struct LZ4F_preferences_t
@@ -94,8 +107,8 @@ struct LZ4F_preferences_t
     reserved::NTuple{4, Cuint}        
 end
 
-function LZ4F_preferences_t(frame_info::LZ4F_frameInfo_t; compressionlevel::Cint=(Cint)(0), autoflush::Cuint=(Cuint)(0))
-    LZ4F_preferences_t(frame_info, compressionlevel, autoflush, (0,0,0,0))
+function LZ4F_preferences_t(frame_info::LZ4F_frameInfo_t; compressionlevel::Integer=0, autoflush::Bool=false)
+    LZ4F_preferences_t(frame_info, Cint(compressionlevel), Cuint(autoflush), (0,0,0,0))
 end
 
 struct LZ4F_CDict
@@ -151,11 +164,6 @@ struct LZ4F_dctx
     xxh::XXH32_state_t
     blockChecksum::XXH32_state_t
     header::NTuple{LZ4F_HEADER_SIZE_MAX, Cuchar}
-end
-
-struct LZ4F_decompressOptions_t
-    stableDst::Cuint
-    reserved::NTuple{3, Cuint}
 end
 
 function check_context_initialized(ctx::Ptr{LZ4F_cctx})
