@@ -32,7 +32,7 @@ Creates an LZ4 compression codec.
     32-bits checksum of decompressed data
 - `frametype::FrameType=normal_frame)`:  `normal_frame` or `skippable_frame`
 - `contentsize::Integer=0`: Size of uncompressed content (0 for unknown)
-- `blockchecksumflag::Bool=false`: if `true`, each block is followed by a
+- `blockchecksum::Bool=false`: if `true`, each block is followed by a
     checksum of block's compressed data
 - `compressionlevel::Integer=0`: compression level (-1..12)
 - `autoflush::Bool=false`: always flush if `true`
@@ -53,7 +53,7 @@ const LZ4CompressorStream{S} = TranscodingStream{LZ4Compressor,S} where S<:IO
 Creates an LZ4 compression stream. See `LZ4Compressor()` and `TranscodingStream()` for arguments.
 """
 function LZ4CompressorStream(stream::IO; kwargs...)
-    x, y = splitkwargs(kwargs, (:blocksizeid, :blockmode, :contentchecksumflag, :blockchecksumflag, :frametype, :contentsize, :compressionlevel, :autoflush))
+    x, y = splitkwargs(kwargs, (:blocksizeid, :blockmode, :contentchecksum, :blockchecksum, :frametype, :contentsize, :compressionlevel, :autoflush))
     return TranscodingStream(LZ4Compressor(; x...), stream; y...)
 end
 

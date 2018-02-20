@@ -74,3 +74,30 @@ end
     @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
     @test err[].msg == "Output buffer too small for header."
 end
+
+@testset "keywords" begin
+    compressor = LZ4Compressor(
+        blocksizeid = max64KB,
+        blockmode = block_independent,
+        contentchecksum = true,
+        blockchecksum = true,
+        frametype = skippable_frame,
+        contentsize = 100,
+        compressionlevel=5,
+        autoflush = true
+        )
+
+    prefs = compressor.prefs[]
+    @test prefs.compressionLevel == Cint(5)
+    @test prefs.autoFlush == Cuint(1)
+    @test prefs.reserved == (Cuint(0), Cuint(0), Cuint(0), Cuint(0))
+
+    frame = prefs.frameInfo
+    @test frame.blockSizeID == Cuint(4)
+    @test frame.blockMode == Cuint(1)
+    @test frame.contentChecksumFlag == Cuint(1)
+    @test frame.frameType == Cuint(1)
+    @test frame.contentSize == Culonglong(100)
+    @test frame.blockChecksumFlag == Cuint(1)
+
+end
