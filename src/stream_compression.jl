@@ -32,7 +32,7 @@ Creates an LZ4 compression codec.
     32-bits checksum of decompressed data
 - `frametype::FrameType=normal_frame)`:  `normal_frame` or `skippable_frame`
 - `contentsize::Integer=0`: Size of uncompressed content (0 for unknown)
-- `blockchecksumflag::Bool=false`: if `true`, each block is followed by a
+- `blockchecksum::Bool=false`: if `true`, each block is followed by a
     checksum of block's compressed data
 - `compressionlevel::Integer=0`: compression level (-1..12)
 - `autoflush::Bool=false`: always flush if `true`
@@ -68,7 +68,7 @@ end
 Returns the minimum output size of `process`.
 """
 function TranscodingStreams.minoutsize(codec::LZ4Compressor, input::Memory)::Int
-    LZ4F_HEADER_SIZE_MAX + LZ4_FOOTER_SIZE
+    LZ4F_HEADER_SIZE_MAX
 end
 
 """
