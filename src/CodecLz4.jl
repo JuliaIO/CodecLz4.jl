@@ -1,8 +1,8 @@
 __precompile__()
 module CodecLz4
 
-using TranscodingStreams: TranscodingStreams, TranscodingStream, Memory, Error
-
+using TranscodingStreams: TranscodingStream, Memory, Error
+using TranscodingStreams
 export LZ4Compressor, LZ4CompressorStream,
     LZ4Decompressor, LZ4DecompressorStream,
     BlockSizeID, default_size, max64KB, max256KB, max1MB, max4MB,

@@ -1,5 +1,5 @@
 using BinDeps
-using Base.Libdl
+using Libdl
 @BinDeps.setup
 
 function validate_lz4(name,handle)
@@ -11,10 +11,10 @@ liblz4 = library_dependency("liblz4", validate = validate_lz4)
 
 long_version = "1.8.1.2"
 short_version = "1.8.1"
-zipname = "lz4_v$(replace(short_version, ".", "_"))_win$(Sys.WORD_SIZE).zip"
+zipname = "lz4_v$(replace(short_version, "." => "_"))_win$(Sys.WORD_SIZE).zip"
 
 suffix = "so.$short_version"
-if is_apple()
+if Sys.is_apple()
     suffix = "$short_version.$(Libdl.dlext)"
 end
 
@@ -50,7 +50,7 @@ provides(BuildProcess,
         end
     end), liblz4, os = :Windows)
 
-if is_windows() 
+if Sys.is_windows() 
     push!(BinDeps.defaults, BuildProcess)
     @BinDeps.install Dict(:liblz4 => :liblz4)
     pop!(BinDeps.defaults)

@@ -98,7 +98,7 @@
             dctx = Ref{Ptr{CodecLz4.LZ4F_dctx}}(C_NULL)
             srcsize = Ref{Csize_t}(origsize)
             dstsize =  Ref{Csize_t}(8*1280)
-            decbuffer = Vector{UInt8}(1280)
+            decbuffer = Vector{UInt8}(uninitialized, 1280)
 
             frameinfo = Ref(CodecLz4.LZ4F_frameInfo_t())
 
@@ -127,7 +127,7 @@
             dctx = Ref{Ptr{CodecLz4.LZ4F_dctx}}(C_NULL)
             srcsize = Ref{Csize_t}(origsize)
             dstsize =  Ref{Csize_t}(1280)
-            decbuffer = Vector{UInt8}(1280)
+            decbuffer = Vector{UInt8}(uninitialized, 1280)
 
             frameinfo = Ref(CodecLz4.LZ4F_frameInfo_t())
 
@@ -157,7 +157,7 @@
         @test bound > 0
 
         bufsize = bound + CodecLz4.LZ4F_HEADER_SIZE_MAX
-        buffer = Vector{UInt8}(ceil(Int, bound / 8))
+        buffer = Vector{UInt8}(uninitialized, ceil(Int, bound / 8))
 
         @test_nowarn result = CodecLz4.LZ4F_compressBegin(ctx[], buffer, bufsize, prefs)
 
@@ -186,7 +186,7 @@
         prefs = Ptr{CodecLz4.LZ4F_preferences_t}(C_NULL)
 
         bufsize = test_size
-        buffer = Vector{UInt8}(test_size)
+        buffer = Vector{UInt8}(uninitialized, test_size)
 
         @test_throws ErrorException CodecLz4.LZ4F_compressBegin(ctx[], buffer, bufsize, prefs)
         @test_throws ErrorException CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer), bufsize, pointer(testIn), test_size, C_NULL)
@@ -204,7 +204,7 @@
         @test bound > 0
 
         bufsize = bound + CodecLz4.LZ4F_HEADER_SIZE_MAX
-        buffer = Vector{UInt8}(ceil(Int, bound / 8))
+        buffer = Vector{UInt8}(uninitialized, ceil(Int, bound / 8))
 
         @test_throws ErrorException CodecLz4.LZ4F_compressBegin(ctx[], buffer, UInt(2), prefs)
         @test_throws ErrorException CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer), bufsize, pointer(testIn), test_size, C_NULL)
@@ -232,7 +232,7 @@
         dctx = Ref{Ptr{CodecLz4.LZ4F_dctx}}(C_NULL)
         srcsize = Ref{Csize_t}(test_size)
         dstsize =  Ref{Csize_t}(8*1280)
-        decbuffer = Vector{UInt8}(1280)
+        decbuffer = Vector{UInt8}(uninitialized, 1280)
 
         frameinfo = Ref(CodecLz4.LZ4F_frameInfo_t())
         @test_throws ErrorException CodecLz4.LZ4F_getFrameInfo(dctx[], frameinfo, pointer(testIn), srcsize)
@@ -250,7 +250,7 @@
         @test bound > 0
 
         bufsize = bound + CodecLz4.LZ4F_HEADER_SIZE_MAX
-        buffer = Vector{UInt8}(ceil(Int, bound / 8))
+        buffer = Vector{UInt8}(uninitialized, ceil(Int, bound / 8))
 
         @test_nowarn result = CodecLz4.LZ4F_compressBegin(ctx[], buffer, bufsize, prefs)
 

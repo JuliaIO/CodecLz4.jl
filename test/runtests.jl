@@ -1,4 +1,4 @@
-using Base.Test
+using Test
 using CodecLz4
 
 @testset "CodecLz4.jl" begin
