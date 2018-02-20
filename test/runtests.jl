@@ -1,4 +1,4 @@
-using Test
+using Compat.Test
 using CodecLz4
 
 @testset "CodecLz4.jl" begin

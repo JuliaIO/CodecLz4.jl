@@ -1,6 +1,6 @@
 __precompile__()
 module CodecLz4
-
+using Compat
 using TranscodingStreams: TranscodingStream, Memory, Error
 using TranscodingStreams
 export LZ4Compressor, LZ4CompressorStream,
