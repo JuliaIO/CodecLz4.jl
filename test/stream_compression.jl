@@ -16,6 +16,7 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     @test LZ4CompressorStream <: TranscodingStream
     @test LZ4DecompressorStream <: TranscodingStream
 
+    # Change back to `transcode(LZ4Compressor, text)` once bicycle1885/TranscodingStreams.jl#39 is fixed
     compressed = transcode(LZ4Compressor, Vector{UInt8}(text))
     @test sizeof(compressed) < sizeof(text)
 
@@ -23,8 +24,8 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     @test sizeof(decompressed) > sizeof(compressed)
     @test decompressed == Vector{UInt8}(text)
 
-    #test_roundtrip_fileio(LZ4Compressor, LZ4Decompressor)
-    #test_roundtrip_transcode(LZ4Compressor, LZ4Decompressor)
+    test_roundtrip_fileio(LZ4Compressor, LZ4Decompressor)
+    test_roundtrip_transcode(LZ4Compressor, LZ4Decompressor)
 
     file = IOBuffer(text)
     stream = LZ4DecompressorStream(LZ4CompressorStream(file))
