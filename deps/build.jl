@@ -1,5 +1,5 @@
 using BinDeps
-using Libdl
+using Compat.Libdl
 @BinDeps.setup
 
 function validate_lz4(name,handle)
