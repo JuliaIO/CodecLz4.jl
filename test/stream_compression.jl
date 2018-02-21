@@ -1,5 +1,6 @@
-using TranscodingStreams: TranscodingStream, TranscodingStreams, Error, Memory,
+using TranscodingStreams: TranscodingStream, Error, Memory,
     test_roundtrip_fileio, test_roundtrip_transcode
+using TranscodingStreams
 
 text = b"""
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sollicitudin
@@ -15,7 +16,8 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     @test LZ4CompressorStream <: TranscodingStream
     @test LZ4DecompressorStream <: TranscodingStream
 
-    compressed = transcode(LZ4Compressor, text)
+    # Change back to `transcode(LZ4Compressor, text)` once bicycle1885/TranscodingStreams.jl#39 is fixed
+    compressed = transcode(LZ4Compressor, Vector{UInt8}(text))
     @test sizeof(compressed) < sizeof(text)
 
     decompressed = transcode(LZ4Decompressor, compressed)
@@ -53,12 +55,12 @@ end
 
 @testset "Errors" begin
     input = Memory(Vector{UInt8}(text))
-    output = Memory(Vector{UInt8}(1280))
+    output = Memory(Vector{UInt8}(uninitialized, 1280))
     not_initialized = LZ4Compressor()
     @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
     @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0, 0, :error)
 
-    compressed = transcode(LZ4Compressor, text)
+    compressed = transcode(LZ4Compressor, Vector{UInt8}(text))
     corrupted = copy(compressed)
     corrupted[1] = 0x00
     file = IOBuffer(corrupted)
@@ -66,7 +68,7 @@ end
     @test_throws ErrorException read(stream)
     @test_throws ArgumentError read(stream)
 
-    output = Memory(Vector{UInt8}(1))
+    output = Memory(Vector{UInt8}(uninitialized, 1))
     compressor = LZ4Compressor()
     @test_nowarn TranscodingStreams.initialize(compressor)
     @test TranscodingStreams.startproc(compressor, :read, Error()) == :ok

@@ -42,7 +42,7 @@ function LZ4Compressor(; kwargs...)
     ctx = Ref{Ptr{LZ4F_cctx}}(C_NULL)
     frame = LZ4F_frameInfo_t(; y...)
     prefs = Ref(LZ4F_preferences_t(frame; x...))
-    return LZ4Compressor(ctx, prefs, Memory(Vector{UInt8}(LZ4F_HEADER_SIZE_MAX)), false)
+    return LZ4Compressor(ctx, prefs, Memory(Vector{UInt8}(uninitialized, LZ4F_HEADER_SIZE_MAX)), false)
 end
 
 const LZ4CompressorStream{S} = TranscodingStream{LZ4Compressor,S} where S<:IO
@@ -74,7 +74,7 @@ end
 """
 Initializes the LZ4F Compression Codec.
 """
-function TranscodingStreams.initialize(codec::LZ4Compressor)::Void
+function TranscodingStreams.initialize(codec::LZ4Compressor)::Nothing
     LZ4F_createCompressionContext(codec.ctx, LZ4F_getVersion())
     nothing
 end
@@ -82,7 +82,7 @@ end
 """
 Finalizes the LZ4F Compression Codec.
 """
-function TranscodingStreams.finalize(codec::LZ4Compressor)::Void
+function TranscodingStreams.finalize(codec::LZ4Compressor)::Nothing
     LZ4F_freeCompressionContext(codec.ctx[])
     nothing
 end
@@ -93,7 +93,7 @@ Creates the LZ4F header to be written to the output.
 """
 function TranscodingStreams.startproc(codec::LZ4Compressor, mode::Symbol, error::Error)::Symbol
     try
-        header = Vector{UInt8}(LZ4F_HEADER_SIZE_MAX)
+        header = Vector{UInt8}(uninitialized, LZ4F_HEADER_SIZE_MAX)
         headerSize = LZ4F_compressBegin(codec.ctx[], header, convert(Csize_t, LZ4F_HEADER_SIZE_MAX), codec.prefs)
         codec.header = Memory(resize!(header, headerSize))
         codec.write_header = true
@@ -117,7 +117,7 @@ function TranscodingStreams.process(codec::LZ4Compressor, input::Memory, output:
             error[] = ErrorException("Output buffer too small for header.")
             return (data_read, data_written, :error)
         end
-        unsafe_copy!(output.ptr, codec.header.ptr, codec.header.size)
+        unsafe_copyto!(output.ptr, codec.header.ptr, codec.header.size)
         data_written = codec.header.size
         codec.write_header = false
     end
@@ -166,7 +166,7 @@ end
 """
 Initializes the LZ4F Decompression Codec.
 """
-function TranscodingStreams.initialize(codec::LZ4Decompressor)::Void
+function TranscodingStreams.initialize(codec::LZ4Decompressor)::Nothing
     LZ4F_createDecompressionContext(codec.dctx, LZ4F_getVersion())
     nothing
 end
@@ -174,7 +174,7 @@ end
 """
 Finalizes the LZ4F Decompression Codec.
 """
-function TranscodingStreams.finalize(codec::LZ4Decompressor)::Void
+function TranscodingStreams.finalize(codec::LZ4Decompressor)::Nothing
     LZ4F_freeDecompressionContext(codec.dctx[])
     nothing
 end
