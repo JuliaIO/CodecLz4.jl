@@ -128,7 +128,7 @@ function TranscodingStreams.process(codec::LZ4Compressor, input::Memory, output:
 
 end
 
-mutable struct LZ4Decompressor <: TranscodingStreams.Codec
+struct LZ4Decompressor <: TranscodingStreams.Codec
     dctx::Ref{Ptr{LZ4F_dctx}}
 end
 
@@ -188,7 +188,7 @@ function TranscodingStreams.process(codec::LZ4Decompressor, input::Memory, outpu
         end
 
     catch err
-        if typeof(err) == LZ4Exception && err.msg == "ERROR_frameType_unknown"
+        if isa(err, LZ4Exception) && err.msg == "ERROR_frameType_unknown"
             codec.dctx[] = C_NULL
         end
         error[] = err
