@@ -1,4 +1,4 @@
-using TranscodingStreams
+using TranscodingStreams: splitkwargs
 
 const BUF_SIZE = 16*1024
 const LZ4_FOOTER_SIZE = 4
@@ -28,7 +28,7 @@ Creates an LZ4 compression codec.
 - `autoflush::Bool=false`: always flush if `true`
 """
 function LZ4Compressor(; kwargs...)
-    x, y = TranscodingStreams.splitkwargs(kwargs, (:compressionlevel, :autoflush))
+    x, y = splitkwargs(kwargs, (:compressionlevel, :autoflush))
     ctx = Ref{Ptr{LZ4F_cctx}}(C_NULL)
     frame = LZ4F_frameInfo_t(; y...)
     prefs = Ref(LZ4F_preferences_t(frame; x...))
@@ -43,7 +43,7 @@ const LZ4CompressorStream{S} = TranscodingStream{LZ4Compressor,S} where S<:IO
 Creates an LZ4 compression stream. See `LZ4Compressor()` and `TranscodingStream()` for arguments.
 """
 function LZ4CompressorStream(stream::IO; kwargs...)
-    x, y = TranscodingStreams.splitkwargs(kwargs, (:blocksizeid, :blockmode, :contentchecksum, :blockchecksum, :frametype, :contentsize, :compressionlevel, :autoflush))
+    x, y = splitkwargs(kwargs, (:blocksizeid, :blockmode, :contentchecksum, :blockchecksum, :frametype, :contentsize, :compressionlevel, :autoflush))
     return TranscodingStream(LZ4Compressor(; x...), stream; y...)
 end
 
@@ -130,7 +130,6 @@ end
 
 mutable struct LZ4Decompressor <: TranscodingStreams.Codec
     dctx::Ref{Ptr{LZ4F_dctx}}
-    panic_mode::Bool
 end
 
 """
@@ -141,10 +140,6 @@ Creates an LZ4 decompression codec.
 function LZ4Decompressor()
     dctx = Ref{Ptr{LZ4F_dctx}}(C_NULL)
     return LZ4Decompressor(dctx)
-end
-
-function LZ4Decompressor(dctx::Ref{Ptr{LZ4F_dctx}})
-    return LZ4Decompressor(dctx, false)
 end
 
 const LZ4DecompressorStream{S} = TranscodingStream{LZ4Decompressor,S} where S<:IO
@@ -170,9 +165,7 @@ end
 Finalizes the LZ4F Decompression Codec.
 """
 function TranscodingStreams.finalize(codec::LZ4Decompressor)::Nothing
-    if !codec.panic_mode
-        LZ4F_freeDecompressionContext(codec.dctx[])
-    end
+    LZ4F_freeDecompressionContext(codec.dctx[])
     nothing
 end
 
@@ -196,7 +189,7 @@ function TranscodingStreams.process(codec::LZ4Decompressor, input::Memory, outpu
 
     catch err
         if typeof(err) == LZ4Exception && err.msg == "ERROR_frameType_unknown"
-            codec.panic_mode = true
+            codec.dctx[] = C_NULL
         end
         error[] = err
         (data_read, data_written, :error)
