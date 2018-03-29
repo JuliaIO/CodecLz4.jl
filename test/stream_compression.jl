@@ -65,7 +65,7 @@ end
     corrupted[1] = 0x00
     file = IOBuffer(corrupted)
     stream = LZ4DecompressorStream(file)
-    @test_throws ErrorException read(stream)
+    @test_throws CodecLz4.LZ4Exception read(stream)
     @test_throws ArgumentError read(stream)
 
     output = Memory(Vector{UInt8}(uninitialized, 1))
@@ -75,6 +75,12 @@ end
     err = Error()
     @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
     @test err[].msg == "Output buffer too small for header."
+    @test_nowarn TranscodingStreams.finalize(compressor)
+
+    codec = LZ4Decompressor()
+    @test_throws CodecLz4.LZ4Exception transcode(codec, "not properly formatted")
+    @test_nowarn TranscodingStreams.finalize(codec)
+
 end
 
 @testset "keywords" begin
