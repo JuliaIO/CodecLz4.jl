@@ -1,17 +1,7 @@
-using TranscodingStreams
+using TranscodingStreams: splitkwargs
 
 const BUF_SIZE = 16*1024
 const LZ4_FOOTER_SIZE = 4
-
-# borrowed from CodecZlib.jl
-function splitkwargs(kwargs, keys)
-    hits = []
-    others = []
-    for kwarg in kwargs
-        push!(kwarg[1] ∈ keys ? hits : others, kwarg)
-    end
-    return hits, others
-end
 
 mutable struct LZ4Compressor <: TranscodingStreams.Codec
     ctx::Ref{Ptr{LZ4F_cctx}}
@@ -198,6 +188,9 @@ function TranscodingStreams.process(codec::LZ4Decompressor, input::Memory, outpu
         end
 
     catch err
+        if isa(err, LZ4Exception) && err.msg == "ERROR_frameType_unknown"
+            codec.dctx[] = C_NULL
+        end
         error[] = err
         (data_read, data_written, :error)
     end

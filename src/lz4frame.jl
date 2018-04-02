@@ -168,13 +168,13 @@ end
 
 function check_context_initialized(ctx::Ptr{LZ4F_cctx})
     if ctx == Ptr{LZ4F_cctx}(C_NULL)
-        error("Uninitialized compression context")
+        throw(LZ4Exception("LZ4F_cctx", "Uninitialized compression context"))
     end
 end
 
 function check_context_initialized(ctx::Ptr{LZ4F_dctx})
     if ctx == Ptr{LZ4F_dctx}(C_NULL)
-        error("Uninitialized decompression context")
+        throw(LZ4Exception("LZ4F_dctx", "Uninitialized decompression context"))
     end
 end
 
@@ -205,7 +205,7 @@ Will throw an error if there was an error during context creation.
 function LZ4F_createCompressionContext(cctxPtr::Ref{Ptr{LZ4F_cctx}}, version::UInt32)
     ret = ccall((:LZ4F_createCompressionContext, liblz4), Csize_t, (Ref{Ptr{LZ4F_cctx}}, UInt32), cctxPtr, version)
     if LZ4F_isError(ret)
-        error("LZ4F_createCompressionContext: " * LZ4F_getErrorName(ret))
+        throw(LZ4Exception("LZ4F_createCompressionContext", LZ4F_getErrorName(ret)))
     end
     ret
 end
@@ -228,7 +228,7 @@ function LZ4F_compressBegin(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize_
     check_context_initialized(cctx)
     ret = ccall((:LZ4F_compressBegin, liblz4), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Cvoid}, Csize_t, Ref{LZ4F_preferences_t}), cctx, dstBuffer, dstCapacity, prefsPtr)
     if LZ4F_isError(ret)
-        error("LZ4F_compressBegin: " * LZ4F_getErrorName(ret))
+        throw(LZ4Exception("LZ4F_compressBegin" ,LZ4F_getErrorName(ret)))
     end
     ret
 end
@@ -259,7 +259,7 @@ function LZ4F_compressUpdate(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize
     check_context_initialized(cctx)
     ret = ccall((:LZ4F_compressUpdate, liblz4), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Cvoid}, Csize_t, Ptr{Cvoid}, Csize_t, Ptr{LZ4F_compressOptions_t}), cctx, dstBuffer, dstCapacity, srcBuffer, srcSize, cOptPtr)
     if LZ4F_isError(ret)
-        error("LZ4F_compressUpdate: " * LZ4F_getErrorName(ret))
+        throw(LZ4Exception("LZ4F_compressUpdate", LZ4F_getErrorName(ret)))
     end
     ret
 end
@@ -276,7 +276,7 @@ function LZ4F_flush(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize_t, cOptP
     check_context_initialized(cctx)
     ret = ccall((:LZ4F_flush, liblz4), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Cvoid}, Csize_t, Ptr{LZ4F_compressOptions_t}), cctx, dstBuffer, dstCapacity, cOptPtr)
     if LZ4F_isError(ret)
-        error("LZ4F_flush: " * LZ4F_getErrorName(ret))
+        throw(LZ4Exception("LZ4F_flush", LZ4F_getErrorName(ret)))
     end
     ret
 end
@@ -295,7 +295,7 @@ function LZ4F_compressEnd(cctx::Ptr{LZ4F_cctx}, dstBuffer, dstCapacity::Csize_t,
     check_context_initialized(cctx)
     ret = ccall((:LZ4F_compressEnd, liblz4), Csize_t, (Ptr{LZ4F_cctx}, Ptr{Cvoid}, Csize_t, Ptr{LZ4F_compressOptions_t}), cctx, dstBuffer, dstCapacity, cOptPtr)
     if LZ4F_isError(ret)
-        error("LZ4F_compressEnd: " * LZ4F_getErrorName(ret))
+        throw(LZ4Exception("LZ4F_compressEnd", LZ4F_getErrorName(ret)))
     end
     ret
 end
@@ -311,7 +311,7 @@ The `dctx` memory can be released using `LZ4F_freeDecompressionContext()`.
 function LZ4F_createDecompressionContext(dctxPtr::Ref{Ptr{LZ4F_dctx}}, version::UInt32)
     ret = ccall((:LZ4F_createDecompressionContext, liblz4), Csize_t, (Ref{Ptr{LZ4F_dctx}}, UInt32), dctxPtr, version)
     if LZ4F_isError(ret)
-        error("LZ4F_createDecompressionContext: " * LZ4F_getErrorName(ret))
+        throw(LZ4Exception("LZ4F_createDecompressionContext", LZ4F_getErrorName(ret)))
     end
     ret
 end
@@ -352,7 +352,7 @@ function LZ4F_getFrameInfo(dctx::Ptr{LZ4F_dctx}, frameInfoPtr::Ref{LZ4F_frameInf
     check_context_initialized(dctx)
     ret = ccall((:LZ4F_getFrameInfo, liblz4), Csize_t, (Ptr{LZ4F_dctx}, Ref{LZ4F_frameInfo_t}, Ptr{Cvoid}, Ref{Csize_t}), dctx, frameInfoPtr, srcBuffer, srcSizePtr)
     if LZ4F_isError(ret)
-        error("LZ4F_getFrameInfo: " * LZ4F_getErrorName(ret))
+        throw(LZ4Exception("LZ4F_getFrameInfo", LZ4F_getErrorName(ret)))
     end
     ret
 end
@@ -388,7 +388,7 @@ function LZ4F_decompress(dctx::Ptr{LZ4F_dctx}, dstBuffer, dstSizePtr::Ref{Csize_
     check_context_initialized(dctx)
     ret = ccall((:LZ4F_decompress, liblz4), Csize_t, (Ptr{LZ4F_dctx}, Ptr{Cvoid}, Ref{Csize_t}, Ptr{Cvoid}, Ref{Csize_t}, Ptr{LZ4F_decompressOptions_t}), dctx, dstBuffer, dstSizePtr, srcBuffer, srcSizePtr, dOptPtr)
     if LZ4F_isError(ret)
-        error("LZ4F_decompress: " * LZ4F_getErrorName(ret))
+        throw(LZ4Exception("LZ4F_decompress", LZ4F_getErrorName(ret)))
     end
     ret
 end
