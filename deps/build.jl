@@ -1,5 +1,6 @@
 using BinDeps
 using Compat.Libdl
+using Compat.Sys: isapple, iswindows
 @BinDeps.setup
 
 function validate_lz4(name,handle)
@@ -14,9 +15,6 @@ short_version = "1.8.1"
 zipname = "lz4_v$(replace(short_version, "." => "_"))_win$(Sys.WORD_SIZE).zip"
 
 suffix = "so.$short_version"
-
-isapple() = VERSION < v"0.7.0" ? Sys.is_apple() : Sys.isapple()
-iswindows() = VERSION < v"0.7.0" ? Sys.is_windows() : Sys.iswindows()
 
 if isapple()
     suffix = "$short_version.$(Libdl.dlext)"
@@ -54,7 +52,7 @@ provides(BuildProcess,
         end
     end), liblz4, os = :Windows)
 
-if iswindows() 
+if iswindows()
     push!(BinDeps.defaults, BuildProcess)
     @BinDeps.install Dict(:liblz4 => :liblz4)
     pop!(BinDeps.defaults)

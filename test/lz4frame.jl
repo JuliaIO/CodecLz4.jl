@@ -9,14 +9,14 @@ using Compat
         no_error = UInt(0)
         @test !CodecLz4.LZ4F_isError(no_error)
         @test CodecLz4.LZ4F_getErrorName(no_error) == "Unspecified error code"
-        
+
         ERROR_GENERIC = typemax(UInt)
         @test CodecLz4.LZ4F_isError(ERROR_GENERIC)
         @test CodecLz4.LZ4F_getErrorName(ERROR_GENERIC) == "ERROR_GENERIC"
     end
 
     @testset "keywords" begin
-   
+
         frame = CodecLz4.LZ4F_frameInfo_t()
         @test frame.blockSizeID == Cuint(default_size)
         @test frame.blockMode == Cuint(block_linked)
@@ -99,7 +99,7 @@ using Compat
             dctx = Ref{Ptr{CodecLz4.LZ4F_dctx}}(C_NULL)
             srcsize = Ref{Csize_t}(origsize)
             dstsize =  Ref{Csize_t}(8*1280)
-            decbuffer = Vector{UInt8}(uninitialized, 1280)
+            decbuffer = Vector{UInt8}(undef, 1280)
 
             frameinfo = Ref(CodecLz4.LZ4F_frameInfo_t())
 
@@ -128,13 +128,13 @@ using Compat
             dctx = Ref{Ptr{CodecLz4.LZ4F_dctx}}(C_NULL)
             srcsize = Ref{Csize_t}(origsize)
             dstsize =  Ref{Csize_t}(1280)
-            decbuffer = Vector{UInt8}(uninitialized, 1280)
+            decbuffer = Vector{UInt8}(undef, 1280)
 
             frameinfo = Ref(CodecLz4.LZ4F_frameInfo_t())
 
             CodecLz4.LZ4F_createDecompressionContext(dctx, version)
 
-            buffer[1:CodecLz4.LZ4F_HEADER_SIZE_MAX] = 0x10
+            buffer[1:CodecLz4.LZ4F_HEADER_SIZE_MAX] .= 0x10
             @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_getFrameInfo(dctx[], frameinfo, buffer, srcsize)
 
             offset = srcsize[]
@@ -158,7 +158,7 @@ using Compat
         @test bound > 0
 
         bufsize = bound + CodecLz4.LZ4F_HEADER_SIZE_MAX
-        buffer = Vector{UInt8}(uninitialized, ceil(Int, bound / 8))
+        buffer = Vector{UInt8}(undef, ceil(Int, bound / 8))
 
         @test_nowarn result = CodecLz4.LZ4F_compressBegin(ctx[], buffer, bufsize, prefs)
 
@@ -187,7 +187,7 @@ using Compat
         prefs = Ptr{CodecLz4.LZ4F_preferences_t}(C_NULL)
 
         bufsize = test_size
-        buffer = Vector{UInt8}(uninitialized, test_size)
+        buffer = Vector{UInt8}(undef, test_size)
 
         @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_compressBegin(ctx[], buffer, bufsize, prefs)
         @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer), bufsize, pointer(testIn), test_size, C_NULL)
@@ -205,7 +205,7 @@ using Compat
         @test bound > 0
 
         bufsize = bound + CodecLz4.LZ4F_HEADER_SIZE_MAX
-        buffer = Vector{UInt8}(uninitialized, ceil(Int, bound / 8))
+        buffer = Vector{UInt8}(undef, ceil(Int, bound / 8))
 
         @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_compressBegin(ctx[], buffer, UInt(2), prefs)
         @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer), bufsize, pointer(testIn), test_size, C_NULL)
@@ -233,7 +233,7 @@ using Compat
         dctx = Ref{Ptr{CodecLz4.LZ4F_dctx}}(C_NULL)
         srcsize = Ref{Csize_t}(test_size)
         dstsize =  Ref{Csize_t}(8*1280)
-        decbuffer = Vector{UInt8}(uninitialized, 1280)
+        decbuffer = Vector{UInt8}(undef, 1280)
 
         frameinfo = Ref(CodecLz4.LZ4F_frameInfo_t())
         @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_getFrameInfo(dctx[], frameinfo, pointer(testIn), srcsize)
@@ -251,7 +251,7 @@ using Compat
         @test bound > 0
 
         bufsize = bound + CodecLz4.LZ4F_HEADER_SIZE_MAX
-        buffer = Vector{UInt8}(uninitialized, ceil(Int, bound / 8))
+        buffer = Vector{UInt8}(undef, ceil(Int, bound / 8))
 
         @test_nowarn result = CodecLz4.LZ4F_compressBegin(ctx[], buffer, bufsize, prefs)
 
