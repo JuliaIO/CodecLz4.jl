@@ -55,7 +55,7 @@ end
 
 @testset "Errors" begin
     input = Memory(Vector{UInt8}(text))
-    output = Memory(Vector{UInt8}(uninitialized, 1280))
+    output = Memory(Vector{UInt8}(undef, 1280))
     not_initialized = LZ4Compressor()
     @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
     @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0, 0, :error)
@@ -68,7 +68,7 @@ end
     @test_throws CodecLz4.LZ4Exception read(stream)
     @test_throws ArgumentError read(stream)
 
-    output = Memory(Vector{UInt8}(uninitialized, 1))
+    output = Memory(Vector{UInt8}(undef, 1))
     compressor = LZ4Compressor()
     @test_nowarn TranscodingStreams.initialize(compressor)
     @test TranscodingStreams.startproc(compressor, :read, Error()) == :ok

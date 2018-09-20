@@ -32,7 +32,7 @@ function LZ4Compressor(; kwargs...)
     ctx = Ref{Ptr{LZ4F_cctx}}(C_NULL)
     frame = LZ4F_frameInfo_t(; y...)
     prefs = Ref(LZ4F_preferences_t(frame; x...))
-    return LZ4Compressor(ctx, prefs, Memory(Vector{UInt8}(uninitialized, LZ4F_HEADER_SIZE_MAX)), false)
+    return LZ4Compressor(ctx, prefs, Memory(Vector{UInt8}(undef, LZ4F_HEADER_SIZE_MAX)), false)
 end
 
 const LZ4CompressorStream{S} = TranscodingStream{LZ4Compressor,S} where S<:IO
@@ -83,7 +83,7 @@ Creates the LZ4F header to be written to the output.
 """
 function TranscodingStreams.startproc(codec::LZ4Compressor, mode::Symbol, error::Error)::Symbol
     try
-        header = Vector{UInt8}(uninitialized, LZ4F_HEADER_SIZE_MAX)
+        header = Vector{UInt8}(undef, LZ4F_HEADER_SIZE_MAX)
         headerSize = LZ4F_compressBegin(codec.ctx[], header, convert(Csize_t, LZ4F_HEADER_SIZE_MAX), codec.prefs)
         codec.header = Memory(resize!(header, headerSize))
         codec.write_header = true
