@@ -8,3 +8,5 @@
 /deps/downloads
 /deps/src
 /deps/usr
+/deps/build.log
+Manifest.toml
