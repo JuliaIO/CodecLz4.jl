@@ -109,3 +109,19 @@ end
     @test frame.blockChecksumFlag == Cuint(1)
 
 end
+
+@testset "dst size fix" begin
+    teststring = rand(UInt8, 800000)
+    io = IOBuffer(teststring)
+    stream = LZ4CompressorStream(io)
+    result = read(stream)
+    @test_nowarn close(stream)
+    close(io)
+
+    io = IOBuffer(result)
+    stream = LZ4DecompressorStream(io)
+    result = read(stream)
+    @test result == teststring
+    @test_nowarn close(stream)
+    close(io)
+end
