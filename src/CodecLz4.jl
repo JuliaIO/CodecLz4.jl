@@ -20,7 +20,7 @@ struct LZ4Exception <: Exception
     msg::AbstractString
 end
 
-function Base.showerror(io::IO, ex::LZ4Exception, bt; backtrace=false)
+function Base.showerror(io::IO, ex::LZ4Exception)
     printstyled(io, "$(ex.src): $(ex.msg)", color=Base.error_color())
 end
 
