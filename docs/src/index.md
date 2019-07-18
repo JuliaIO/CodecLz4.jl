@@ -8,5 +8,4 @@
 
 ```@autodocs
 Modules = [CodecLz4]
-Pages = ["CodecLz4.jl", "lz4frame.jl", "stream_compression.jl"]
 ```
