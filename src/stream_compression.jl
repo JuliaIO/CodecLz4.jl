@@ -69,7 +69,7 @@ function TranscodingStreams.initialize(codec::LZ4Compressor)::Nothing
     nothing
 end
 
-"""
+""" 
 Finalizes the LZ4F Compression Codec.
 """
 function TranscodingStreams.finalize(codec::LZ4Compressor)::Nothing
@@ -170,7 +170,7 @@ function TranscodingStreams.finalize(codec::LZ4Decompressor)::Nothing
 end
 
 """
-Deompresses the data from `input` and writes to `output`.
+Decompresses the data from `input` and writes to `output`.
 If the input data is not properly formatted this function will throw an error.
 """
 function TranscodingStreams.process(codec::LZ4Decompressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
