@@ -69,7 +69,7 @@ function TranscodingStreams.initialize(codec::LZ4Compressor)::Nothing
     nothing
 end
 
-""" 
+"""
 Finalizes the LZ4F Compression Codec.
 """
 function TranscodingStreams.finalize(codec::LZ4Compressor)::Nothing
