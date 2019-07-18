@@ -2,7 +2,7 @@ name = "CodecLz4"
 uuid = "5ba52731-8f18-5e0d-9241-30f10d1ec561"
 license = "MIT"
 author = "Invenia Technical Computing"
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 BinDeps = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
