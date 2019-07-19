@@ -4,7 +4,6 @@
 *.jl.mem
 /docs/build/
 /docs/site/
-/docs/Manifest.toml
 /deps/deps.jl
 /deps/downloads
 /deps/src
