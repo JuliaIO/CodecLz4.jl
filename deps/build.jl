@@ -1,7 +1,6 @@
 using BinDeps
-using Compat.Libdl
+using Libdl
 using Base.Sys: WORD_SIZE
-import Compat.Sys
 @BinDeps.setup
 
 function validate_lz4(name,handle)

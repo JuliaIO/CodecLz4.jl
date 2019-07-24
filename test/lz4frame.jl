@@ -1,4 +1,3 @@
-using Compat
 @testset "lz4frame" begin
      testIn = "Far out in the uncharted backwaters of the unfashionable end of the west-
  ern  spiral  arm  of  the  Galaxy  lies  a  small  unregarded  yellow  sun."

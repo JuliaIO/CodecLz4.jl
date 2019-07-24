@@ -48,6 +48,8 @@ function LZ4CompressorStream(stream::IO; kwargs...)
 end
 
 """
+    TranscodingStreams.expectedsize(codec::LZ4Compressor, input::Memory)
+
 Returns the expected size of the transcoded data.
 """
 function TranscodingStreams.expectedsize(codec::LZ4Compressor, input::Memory)::Int
@@ -55,6 +57,8 @@ function TranscodingStreams.expectedsize(codec::LZ4Compressor, input::Memory)::I
 end
 
 """
+   TranscodingStreams.minoutsize(codec::LZ4Compressor, input::Memory) 
+
 Returns the minimum output size of `process`.
 """
 function TranscodingStreams.minoutsize(codec::LZ4Compressor, input::Memory)::Int
@@ -62,6 +66,8 @@ function TranscodingStreams.minoutsize(codec::LZ4Compressor, input::Memory)::Int
 end
 
 """
+   TranscodingStreams.initialize(codec::LZ4Compressor) 
+
 Initializes the LZ4F Compression Codec.
 """
 function TranscodingStreams.initialize(codec::LZ4Compressor)::Nothing
@@ -70,6 +76,8 @@ function TranscodingStreams.initialize(codec::LZ4Compressor)::Nothing
 end
 
 """
+    TranscodingStreams.finalize(codec::LZ4Compressor)
+
 Finalizes the LZ4F Compression Codec.
 """
 function TranscodingStreams.finalize(codec::LZ4Compressor)::Nothing
@@ -78,6 +86,8 @@ function TranscodingStreams.finalize(codec::LZ4Compressor)::Nothing
 end
 
 """
+    TranscodingStreams.startproc(codec::LZ4Compressor, mode::Symbol, error::Error)
+
 Starts processing with the codec
 Creates the LZ4F header to be written to the output.
 """
@@ -95,6 +105,8 @@ function TranscodingStreams.startproc(codec::LZ4Compressor, mode::Symbol, error:
 end
 
 """
+    TranscodingStreams.process(codec::LZ4Compressor, input::Memory, output::Memory, error::Error)
+
 Compresses the data from `input` and writes to `output`.
 The LZ4 compression algorithm may simply buffer the input data a full frame can be produced, so `data_written` may be 0.
 `flush()` may be used to force `output` to be written.
@@ -154,6 +166,8 @@ function LZ4DecompressorStream(stream::IO; kwargs...)
 end
 
 """
+    TranscodingStreams.initialize(codec::LZ4Decompressor)
+
 Initializes the LZ4F Decompression Codec.
 """
 function TranscodingStreams.initialize(codec::LZ4Decompressor)::Nothing
@@ -162,6 +176,8 @@ function TranscodingStreams.initialize(codec::LZ4Decompressor)::Nothing
 end
 
 """
+    TranscodingStreams.finalize(codec::LZ4Decompressor)
+
 Finalizes the LZ4F Decompression Codec.
 """
 function TranscodingStreams.finalize(codec::LZ4Decompressor)::Nothing
@@ -170,7 +186,9 @@ function TranscodingStreams.finalize(codec::LZ4Decompressor)::Nothing
 end
 
 """
-Deompresses the data from `input` and writes to `output`.
+    TranscodingStreams.process(codec::LZ4Decompressor, input::Memory, output::Memory, error::Error)
+
+Decompresses the data from `input` and writes to `output`.
 If the input data is not properly formatted this function will throw an error.
 """
 function TranscodingStreams.process(codec::LZ4Decompressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
