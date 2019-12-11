@@ -21,17 +21,12 @@ const LZ4HC_HASH_MASK = LZ4HC_HASHTABLESIZE - 1
 const LZ4_STREAMHCSIZE = 4LZ4HC_HASHTABLESIZE + 2LZ4HC_MAXD + 56
 const LZ4_STREAMHCSIZE_SIZET = floor(Int, LZ4_STREAMHCSIZE / sizeof(Csize_t))
 
-struct LZ4_streamHC_t
-	table::NTuple{LZ4_STREAMHCSIZE_SIZET, Csize_t}
-end
-
-
 function LZ4_compress_HC(src, dst, srcSize, dstCapacity, compressionLevel)
     ccall((:LZ4_compress_HC, liblz4), Int32, (Cstring, Cstring, Int32, Int32, Int32), src, dst, srcSize, dstCapacity, compressionLevel)
 end
 
 function LZ4_compress_HC_extStateHC(state, src, dst, srcSize, maxDstSize, compressionLevel)
-    ccall((:LZ4_compress_HC_extStateHC, liblz4), Int32, (Ptr{Void}, Cstring, Cstring, Int32, Int32, Int32), state, src, dst, srcSize, maxDstSize, compressionLevel)
+    ccall((:LZ4_compress_HC_extStateHC, liblz4), Int32, (Ptr{Cvoid}, Cstring, Cstring, Int32, Int32, Int32), state, src, dst, srcSize, maxDstSize, compressionLevel)
 end
 
 function LZ4_sizeofStateHC()
@@ -47,7 +42,7 @@ function LZ4_freeStreamHC(streamHCPtr)
 end
 
 function LZ4_resetStreamHC(streamHCPtr, compressionLevel)
-    ccall((:LZ4_resetStreamHC, liblz4), Void, (Ptr{LZ4_streamHC_t}, Int32), streamHCPtr, compressionLevel)
+    ccall((:LZ4_resetStreamHC, liblz4), Cvoid, (Ptr{LZ4_streamHC_t}, Int32), streamHCPtr, compressionLevel)
 end
 
 function LZ4_loadDictHC(streamHCPtr, dictionary, dictSize)

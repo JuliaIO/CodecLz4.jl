@@ -16,13 +16,6 @@ const LZ4_HASH_SIZE_U32 = 1 << LZ4_HASHLOG
 const LZ4_STREAMDECODESIZE_U64 = 4
 const LZ4_STREAMSIZE_U64 =((1 << (LZ4_MEMORY_USAGE-3)) + 4)
 
-struct LZ4_stream_t 
-    table::NTuple{LZ4_STREAMSIZE_U64, Culonglong}
-end
-struct LZ4_streamDecode_t 
-    table::NTuple{LZ4_STREAMDECODESIZE_U64, Culonglong}
-end
-
 function LZ4_compress_default(src, dst, srcsize, dstCapacity)
     ccall((:LZ4_compress_default, liblz4), Int32, (Ptr{UInt8}, Ptr{UInt8}, Int32, Int32), src, dst, srcsize, dstCapacity)
 end
@@ -44,7 +37,7 @@ function LZ4_sizeofState()
 end
 
 function LZ4_compress_fast_extState(state, src, dst, srcsize, dstCapacity, acceleration)
-ccall((:LZ4_compress_fast_extState, liblz4), Int32, (Ptr{Void}, Ptr{UInt8}, Ptr{UInt8}, Int32, Int32, Int32), state, src, dst, srcsize, dstCapacity, acceleration)
+ccall((:LZ4_compress_fast_extState, liblz4), Int32, (Ptr{Cvoid}, Ptr{UInt8}, Ptr{UInt8}, Int32, Int32, Int32), state, src, dst, srcsize, dstCapacity, acceleration)
 end
 
 function LZ4_compress_destSize(src, dst, srcsize, dstCapacity)
@@ -68,7 +61,7 @@ function LZ4_freeStream(streamptr::Ptr{LZ4_stream_t})
 end
 
 function LZ4_resetStream(streamptr)
-    ccall((:LZ4_resetStream, liblz4), Void, (Ptr{LZ4_stream_t},),streamptr)
+    ccall((:LZ4_resetStream, liblz4), Cvoid, (Ptr{LZ4_stream_t},),streamptr)
 end
 
 function LZ4_loadDict(streamptr, dictionary, dictSize)
