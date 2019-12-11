@@ -31,10 +31,11 @@ const LZ4_HASH_SIZE_U32 = 1 << LZ4_HASHLOG
 const LZ4_STREAMDECODESIZE_U64 = 4
 const LZ4_STREAMSIZE_U64 =((1 << (LZ4_MEMORY_USAGE-3)) + 4)
 
-struct LZ4_stream_t 
+struct LZ4_stream_t
     table::NTuple{LZ4_STREAMSIZE_U64, Culonglong}
 end
-struct LZ4_streamDecode_t 
+
+struct LZ4_streamDecode_t
     table::NTuple{LZ4_STREAMDECODESIZE_U64, Culonglong}
 end
 
@@ -81,7 +82,7 @@ end
 
 struct LZ4F_frameInfo_t
     blockSizeID::Cuint
-    blockMode::Cuint      
+    blockMode::Cuint
     contentChecksumFlag::Cuint
     frameType::Cuint
     contentSize::Culonglong
@@ -94,7 +95,7 @@ function LZ4F_frameInfo_t(;
     blockmode::BlockMode=block_linked,
     contentchecksum::Bool=false,
     frametype::FrameType=normal_frame,
-    contentsize::Integer=0, 
+    contentsize::Integer=0,
     blockchecksum::Bool=false,
 )
     LZ4F_frameInfo_t(Cuint(blocksizeid), Cuint(blockmode), Cuint(contentchecksum), Cuint(frametype), Culonglong(contentsize), Cuint(0), Cuint(blockchecksum))
@@ -103,8 +104,8 @@ end
 struct LZ4F_preferences_t
     frameInfo::LZ4F_frameInfo_t
     compressionLevel::Cint
-    autoFlush::Cuint      
-    reserved::NTuple{4, Cuint}        
+    autoFlush::Cuint
+    reserved::NTuple{4, Cuint}
 end
 
 function LZ4F_preferences_t(frame_info::LZ4F_frameInfo_t; compressionlevel::Integer=0, autoflush::Bool=false)
@@ -142,10 +143,10 @@ struct LZ4F_cctx
     totalInSize::UInt64
     xxh::XXH32_state_t
     lz4CtxPtr::Ptr{Cvoid}
-    lz4CtxLevel::UInt32   
-end 
+    lz4CtxLevel::UInt32
+end
 
-struct LZ4F_dctx 
+struct LZ4F_dctx
     frameInfo::LZ4F_frameInfo_t
     version::UInt32
     dStage::UInt32
@@ -344,7 +345,7 @@ This function works in 2 situations :
 The number of bytes consumed from srcBuffer will be updated within `srcSizePtr` (necessarily <= original value).
 Decompression must resume from (`srcBuffer` + `srcSizePtr`).
 Returns an hint about how many `srcSize` bytes `LZ4F_decompress()` expects for next call or throws an error.
-         
+
 Note 1 : In case of error, dctx is not modified. Decoding operation can resume from beginning safely.
 Note 2 : Frame parameters are *copied into* an already allocated `LZ4F_frameInfo_t` structure.
 """
