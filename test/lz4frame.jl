@@ -15,7 +15,6 @@
     end
 
     @testset "keywords" begin
-
         frame = CodecLz4.LZ4F_frameInfo_t()
         @test frame.blockSizeID == Cuint(default_size)
         @test frame.blockMode == Cuint(block_linked)
