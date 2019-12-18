@@ -16,7 +16,8 @@ test_in = b"""
     decomp = lz4_decompress(comp)
     @test decomp == test_in
 
-    @test_throws CodecLz4.LZ4Exception lz4_hc_compress(rand(UInt8, CodecLz4.LZ4_MAX_INPUT_SIZE + 1))
-    @test_throws CodecLz4.LZ4Exception lz4_compress(rand(UInt8, CodecLz4.LZ4_MAX_INPUT_SIZE + 1))
+    huge_vector = rand(UInt8, CodecLz4.LZ4_MAX_INPUT_SIZE + 1)
+    @test_throws CodecLz4.LZ4Exception lz4_hc_compress(huge_vector)
+    @test_throws CodecLz4.LZ4Exception lz4_compress(huge_vector)
     @test_throws CodecLz4.LZ4Exception lz4_decompress(comp, floor(Int, length(test_in)/2))
 end
