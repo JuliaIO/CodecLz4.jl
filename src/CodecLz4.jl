@@ -6,7 +6,8 @@ export LZ4Compressor, LZ4CompressorStream,
     LZ4Decompressor, LZ4DecompressorStream,
     BlockSizeID, default_size, max64KB, max256KB, max1MB, max4MB,
     BlockMode, block_linked, block_independent,
-    FrameType, normal_frame, skippable_frame
+    FrameType, normal_frame, skippable_frame,
+    lz4_compress, lz4_hc_compress, lz4_decompress
 
 depsjl = joinpath(@__DIR__, "..", "deps", "deps.jl")
 if isfile(depsjl)
@@ -26,5 +27,6 @@ include("headers/lz4frame.jl")
 include("headers/lz4hc.jl")
 include("headers/lz4.jl")
 include("stream_compression.jl")
+include("simple_compression.jl")
 
 end

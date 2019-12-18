@@ -18,7 +18,7 @@ Max supported `srcSize` value is LZ4_MAX_INPUT_SIZE
            or 0 if compression fails.
 """
 function LZ4_compress_HC(src, dst, srcSize, dstCapacity, compressionLevel)
-    ret = ccall((:LZ4_compress_HC, liblz4), Int32, (Cstring, Cstring, Int32, Int32, Int32), src, dst, srcSize, dstCapacity, compressionLevel)
+    ret = ccall((:LZ4_compress_HC, liblz4), Cint, (Cstring, Cstring, Cint, Cint, Cint), src, dst, srcSize, dstCapacity, compressionLevel)
     check_compression_error(ret, "LZ4_compress_HC")
 end
 
@@ -40,11 +40,11 @@ Release memory for LZ4 HC streaming state.
 Existing states can be re-used several times, using LZ4_resetStreamHC().
 """
 function LZ4_freeStreamHC(streamHCPtr)
-    ccall((:LZ4_freeStreamHC, liblz4), Int32, (Ptr{LZ4_streamHC_t},), streamHCPtr)
+    ccall((:LZ4_freeStreamHC, liblz4), Cint, (Ptr{LZ4_streamHC_t},), streamHCPtr)
 end
 
 function LZ4_resetStreamHC(streamHCPtr, compressionLevel)
-    ccall((:LZ4_resetStreamHC, liblz4), Cvoid, (Ptr{LZ4_streamHC_t}, Int32), streamHCPtr, compressionLevel)
+    ccall((:LZ4_resetStreamHC, liblz4), Cvoid, (Ptr{LZ4_streamHC_t}, Cint), streamHCPtr, compressionLevel)
 end
 
 """
@@ -67,14 +67,14 @@ you can save it to a more stable memory space, using LZ4_saveDictHC().
 Return value of LZ4_saveDictHC() is the size of dictionary effectively saved into 'safeBuffer'
 """
 function LZ4_compress_HC_continue(streamHCPtr, src, dst, srcSize, maxDstSize)
-    ret = ccall((:LZ4_compress_HC_extStateHC, liblz4), Int32, (Ptr{LZ4_streamHC_t}, Cstring, Cstring, Int32, Int32), streamHCPtr, src, dst, srcSize, maxDstSize)
+    ret = ccall((:LZ4_compress_HC_extStateHC, liblz4), Cint, (Ptr{LZ4_streamHC_t}, Cstring, Cstring, Cint, Cint), streamHCPtr, src, dst, srcSize, maxDstSize)
     check_compression_error(ret, "LZ4_compress_HC_continue")
 end
 
 # function LZ4_loadDictHC(streamHCPtr, dictionary, dictSize)
-#     ccall((:LZ4_loadDictHC, liblz4), Int32, (Ptr{LZ4_streamHC_t}, Cstring, Int32), streamHCPtr, dictionary, dictSize)
+#     ccall((:LZ4_loadDictHC, liblz4), Cint, (Ptr{LZ4_streamHC_t}, Cstring, Cint), streamHCPtr, dictionary, dictSize)
 # end
 
 # function LZ4_saveDictHC(streamHCPtr, safeBuffer, maxDictSize)
-#     ccall((:LZ4_saveDictHC, liblz4), Int32, (Ptr{LZ4_streamHC_t}, Cstring, Int32), streamHCPtr, safeBuffer, maxDictSize)
+#     ccall((:LZ4_saveDictHC, liblz4), Cint, (Ptr{LZ4_streamHC_t}, Cstring, Cint), streamHCPtr, safeBuffer, maxDictSize)
 # end

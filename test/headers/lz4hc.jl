@@ -1,7 +1,4 @@
 @testset "lz4hc" begin
-    #LZ4_loadDictHC(streamHCPtr, dictionary, dictSize) -> Int32
-    #LZ4_saveDictHC(streamHCPtr, safeBuffer, maxDictSize) -> Int32
-
     test_in = """
         Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
         incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud

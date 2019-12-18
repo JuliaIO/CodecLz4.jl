@@ -16,8 +16,7 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     @test LZ4CompressorStream <: TranscodingStream
     @test LZ4DecompressorStream <: TranscodingStream
 
-    # Change back to `transcode(LZ4Compressor, text)` once bicycle1885/TranscodingStreams.jl#39 is fixed
-    compressed = transcode(LZ4Compressor, Vector{UInt8}(text))
+    compressed = transcode(LZ4Compressor, text)
     @test sizeof(compressed) < sizeof(text)
 
     decompressed = transcode(LZ4Decompressor, compressed)

@@ -33,7 +33,7 @@ This function never writes outside 'dst' buffer, nor read outside 'source' buffe
               or 0 if compression fails
 """
 function LZ4_compress_fast(src, dst, srcsize, dstCapacity, acceleration = 1)
-    ret = ccall((:LZ4_compress_fast, liblz4), Int32, (Ptr{UInt8}, Ptr{UInt8}, Int32, Int32, Int32), src, dst, srcsize, dstCapacity, acceleration)
+    ret = ccall((:LZ4_compress_fast, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint, Cint), src, dst, srcsize, dstCapacity, acceleration)
     check_compression_error(ret, "LZ4_compress_fast")
 end
 
@@ -50,7 +50,7 @@ or fill 'dst' buffer completely with as much data as possible from 'src'.
              or 0 if compression fails
 """
 function LZ4_compress_destSize(src, dst, srcsize, dstCapacity)
-    ret = ccall((:LZ4_compress_destSize, liblz4), Int32, (Ptr{UInt8}, Ptr{UInt8}, Ptr{Int32}, Int32), src, dst, srcsize, dstCapacity)
+    ret = ccall((:LZ4_compress_destSize, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Ptr{Cint}, Cint), src, dst, srcsize, dstCapacity)
     check_compression_error(ret, "LZ4_compress_destSize")
 end
 
@@ -66,7 +66,7 @@ Note that LZ4_compress_default() compress faster when dest buffer size is >= LZ4
           or 0, if input size is too large ( > LZ4_MAX_INPUT_SIZE)
 """
 function LZ4_compressBound(inputsize)
-    ccall((:LZ4_compressBound, liblz4), Int32, (Int32,), inputsize)
+    ccall((:LZ4_compressBound, liblz4), Cint, (Cint,), inputsize)
 end
 
 """
@@ -84,7 +84,7 @@ end
 Releases memory allocated by LZ4_createStream.
 """
 function LZ4_freeStream(streamptr::Ptr{LZ4_stream_t})
-    ccall((:LZ4_freeStream, liblz4), Int32, (Ptr{LZ4_stream_t},), streamptr)
+    ccall((:LZ4_freeStream, liblz4), Cint, (Ptr{LZ4_stream_t},), streamptr)
 end
 
 """
@@ -113,7 +113,7 @@ Special 2 : If input buffer is a ring-buffer, it can have any size, including <
 After an error, the stream status is invalid, it can only be reset or freed.
 """
 function LZ4_compress_fast_continue(streamptr, src, dst, srcSize, dstCapacity, acceleration)
-    ret = ccall((:LZ4_compress_fast_continue, liblz4), Int32, (Ptr{LZ4_stream_t}, Ptr{UInt8}, Ptr{UInt8}, Int32, Int32, Int32), streamptr, src, dst, srcSize, dstCapacity, acceleration)
+    ret = ccall((:LZ4_compress_fast_continue, liblz4), Cint, (Ptr{LZ4_stream_t}, Ptr{UInt8}, Ptr{UInt8}, Cint, Cint, Cint), streamptr, src, dst, srcSize, dstCapacity, acceleration)
     check_compression_error(ret, "LZ4_compress_fast_continue")
 end
 
@@ -129,7 +129,7 @@ return : the number of bytes decompressed into destination buffer (necessarily <
          It never writes outside output buffer, nor reads outside input buffer.
 """
 function LZ4_decompress_safe(src, dst, cmpsize, maxdcmpsize)
-    ret = ccall((:LZ4_decompress_safe, liblz4), Int32, (Ptr{UInt8}, Ptr{UInt8}, Int32, Int32), src, dst, cmpsize, maxdcmpsize)
+    ret = ccall((:LZ4_decompress_safe, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint), src, dst, cmpsize, maxdcmpsize)
     check_decompression_error(ret, "LZ4_decompress_safe")
 end
 
@@ -152,7 +152,7 @@ creation / destruction of streaming decompression tracking structure.
 A tracking structure can be re-used multiple times sequentially.
 """
 function LZ4_freeStreamDecode(LZ4_stream)
-    ccall((:LZ4_freeStreamDecode, liblz4), Int32, (Ptr{LZ4_streamDecode_t},), LZ4_stream)
+    ccall((:LZ4_freeStreamDecode, liblz4), Cint, (Ptr{LZ4_streamDecode_t},), LZ4_stream)
 end
 
 """
@@ -164,7 +164,7 @@ A dictionary can optionnally be set. Use NULL or size 0 for a simple reset order
 @return : 1 if OK, 0 if error
 """
 function LZ4_setStreamDecode(LZ4_streamDecode, dictionary, dictSize)
-    ccall((:LZ4_setStreamDecode, liblz4), Int32, (Ptr{LZ4_streamDecode_t}, Ptr{UInt8}, Int32), LZ4_streamDecode, dictionary, dictSize)
+    ccall((:LZ4_setStreamDecode, liblz4), Cint, (Ptr{LZ4_streamDecode_t}, Ptr{UInt8}, Cint), LZ4_streamDecode, dictionary, dictSize)
 end
 
 """
@@ -189,6 +189,6 @@ Whenever these conditions are not possible, save the last 64KB of decoded data i
 and indicate where it is saved using LZ4_setStreamDecode() before decompressing next block.
 """
 function LZ4_decompress_safe_continue(LZ4_streamDecode, src, dst, srcSize, dstCapacity)
-    ret = ccall((:LZ4_decompress_safe_continue, liblz4), Int32, (Ptr{LZ4_streamDecode_t}, Ptr{UInt8}, Ptr{UInt8}, Int32, Int32), LZ4_streamDecode, src, dst, srcSize, dstCapacity)
+    ret = ccall((:LZ4_decompress_safe_continue, liblz4), Cint, (Ptr{LZ4_streamDecode_t}, Ptr{UInt8}, Ptr{UInt8}, Cint, Cint), LZ4_streamDecode, src, dst, srcSize, dstCapacity)
     check_decompression_error(ret, "LZ4_decompress_safe_continue")
 end

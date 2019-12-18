@@ -6,4 +6,5 @@ using Test
     include("headers/lz4.jl")
     include("headers/lz4hc.jl")
     include("stream_compression.jl")
+    include("simple_compression.jl")
 end
