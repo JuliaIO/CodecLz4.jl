@@ -4,6 +4,9 @@ using TranscodingStreams: TranscodingStream, Memory, Error
 using TranscodingStreams
 export LZ4FrameCompressor, LZ4FrameCompressorStream,
     LZ4FrameDecompressor, LZ4FrameDecompressorStream,
+    LZ4FastCompressor, LZ4FastCompressorStream,
+    LZ4SafeDecompressor, LZ4SafeDecompressorStream,
+    LZ4HCCompressor, LZ4HCCompressorStream,
     BlockSizeID, default_size, max64KB, max256KB, max1MB, max4MB,
     BlockMode, block_linked, block_independent,
     FrameType, normal_frame, skippable_frame,
@@ -26,7 +29,9 @@ Base.showerror(io::IO, ex::LZ4Exception) = print(io, "$(ex.src): $(ex.msg)")
 include("headers/lz4frame.jl")
 include("headers/lz4hc.jl")
 include("headers/lz4.jl")
-include("stream_compression.jl")
+include("frame_compression.jl")
 include("simple_compression.jl")
+include("lz4_compression.jl")
+include("hc_compression.jl")
 
 end

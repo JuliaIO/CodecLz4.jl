@@ -43,7 +43,7 @@ function LZ4_freeStreamHC(streamHCPtr)
     ccall((:LZ4_freeStreamHC, liblz4), Cint, (Ptr{LZ4_streamHC_t},), streamHCPtr)
 end
 
-function LZ4_resetStreamHC(streamHCPtr, compressionLevel)
+function LZ4_resetStreamHC(streamHCPtr, compressionLevel=LZ4HC_CLEVEL_DEFAULT)
     ccall((:LZ4_resetStreamHC, liblz4), Cvoid, (Ptr{LZ4_streamHC_t}, Cint), streamHCPtr, compressionLevel)
 end
 
