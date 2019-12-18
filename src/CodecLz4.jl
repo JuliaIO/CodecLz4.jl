@@ -23,9 +23,8 @@ end
 Base.showerror(io::IO, ex::LZ4Exception) = print(io, "$(ex.src): $(ex.msg)")
 
 include("headers/lz4frame.jl")
-include("headers/lz4frame_static.jl")
 include("headers/lz4hc.jl")
-include("headers/orig_lz4.jl")
+include("headers/lz4.jl")
 include("stream_compression.jl")
 
 end
