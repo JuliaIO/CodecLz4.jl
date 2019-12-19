@@ -35,4 +35,12 @@
             @test CodecLz4.LZ4_freeStreamHC(comp_str) == 0
         end
     end
+
+    @testset "uninitialized" begin
+        stream = Ref{Ptr{CodecLz4.LZ4_streamHC_t}}(C_NULL)
+
+        @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4_resetStreamHC(stream[])
+        @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4_compress_HC_continue(stream[], pointer(test_in), pointer(buffer), test_size, bufsize)
+        @test CodecLz4.LZ4_freeStreamHC(stream[]) == 0
+    end
 end

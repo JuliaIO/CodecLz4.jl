@@ -10,6 +10,18 @@ function check_decompression_error(ret::Integer, function_name::AbstractString)
     return ret
 end
 
+function check_initialized(stream::Ptr{LZ4_stream_t})
+    if stream == Ptr{LZ4_stream_t}(C_NULL)
+        throw(LZ4Exception("LZ4_stream_t", "Uninitialized compression stream"))
+    end
+end
+
+function check_initialized(stream::Ptr{LZ4_streamDecode_t})
+    if stream == Ptr{LZ4_streamDecode_t}(C_NULL)
+        throw(LZ4Exception("LZ4_streamDecode_t", "Uninitialized decompression stream"))
+    end
+end
+
 """
     LZ4_compress_fast(src, dst, srcsize, dstCapacity)
 
@@ -75,7 +87,11 @@ end
 Will allocate and initialize an `LZ4_stream_t` structure.
 """
 function LZ4_createStream()
-    ccall((:LZ4_createStream, liblz4), Ptr{LZ4_stream_t}, ())
+    str = ccall((:LZ4_createStream, liblz4), Ptr{LZ4_stream_t}, ())
+    if str == C_NULL # Could not allocate memory
+        throw(OutOfMemoryError())
+    end
+    return str
 end
 
 """
@@ -93,7 +109,8 @@ end
 An LZ4_stream_t structure can be allocated once and re-used multiple times.
 Use this function to start compressing a new stream.
 """
-function LZ4_resetStream(streamptr)
+function LZ4_resetStream(streamptr::Ptr{LZ4_stream_t})
+    check_initialized(streamptr)
     ccall((:LZ4_resetStream, liblz4), Cvoid, (Ptr{LZ4_stream_t},), streamptr)
 end
 
@@ -112,7 +129,8 @@ Special 2 : If input buffer is a ring-buffer, it can have any size, including <
           or 0 if there is an error (typically, compressed data cannot fit into 'dst')
 After an error, the stream status is invalid, it can only be reset or freed.
 """
-function LZ4_compress_fast_continue(streamptr, src, dst, srcSize, dstCapacity, acceleration)
+function LZ4_compress_fast_continue(streamptr::Ptr{LZ4_stream_t}, src, dst, srcSize, dstCapacity, acceleration=1)
+    check_initialized(streamptr)
     ret = ccall((:LZ4_compress_fast_continue, liblz4), Cint, (Ptr{LZ4_stream_t}, Ptr{UInt8}, Ptr{UInt8}, Cint, Cint, Cint), streamptr, src, dst, srcSize, dstCapacity, acceleration)
     check_compression_error(ret, "LZ4_compress_fast_continue")
 end
@@ -141,7 +159,11 @@ creation / destruction of streaming decompression tracking structure.
 A tracking structure can be re-used multiple times sequentially.
 """
 function LZ4_createStreamDecode()
-    ccall((:LZ4_createStreamDecode, liblz4), Ptr{LZ4_streamDecode_t}, ())
+    str = ccall((:LZ4_createStreamDecode, liblz4), Ptr{LZ4_streamDecode_t}, ())
+    if str == C_NULL # Could not allocate memory
+        throw(OutOfMemoryError())
+    end
+    return str
 end
 
 """
@@ -151,7 +173,7 @@ These decoding functions work the same as
 creation / destruction of streaming decompression tracking structure.
 A tracking structure can be re-used multiple times sequentially.
 """
-function LZ4_freeStreamDecode(LZ4_stream)
+function LZ4_freeStreamDecode(LZ4_stream::Ptr{LZ4_streamDecode_t})
     ccall((:LZ4_freeStreamDecode, liblz4), Cint, (Ptr{LZ4_streamDecode_t},), LZ4_stream)
 end
 
@@ -160,11 +182,14 @@ end
 
 An LZ4_streamDecode_t structure can be allocated once and re-used multiple times.
 Use this function to start decompression of a new stream of blocks.
-A dictionary can optionnally be set. Use NULL or size 0 for a simple reset order.
+A dictionary can optionally be set. Use NULL or size 0 for a simple reset order.
 @return : 1 if OK, 0 if error
 """
-function LZ4_setStreamDecode(LZ4_streamDecode, dictionary, dictSize)
-    ccall((:LZ4_setStreamDecode, liblz4), Cint, (Ptr{LZ4_streamDecode_t}, Ptr{UInt8}, Cint), LZ4_streamDecode, dictionary, dictSize)
+function LZ4_setStreamDecode(LZ4_streamDecode::Ptr{LZ4_streamDecode_t}, dictionary=C_NULL, dictSize=0)
+    check_initialized(LZ4_streamDecode)
+    ret = ccall((:LZ4_setStreamDecode, liblz4), Cint, (Ptr{LZ4_streamDecode_t}, Ptr{UInt8}, Cint), LZ4_streamDecode, dictionary, dictSize)
+    ret == 0 && throw(LZ4Exception("LZ4_setStreamDecode", "Stream reinitialization failed."))
+    return ret
 end
 
 """
@@ -188,7 +213,8 @@ Special : if application sets a ring buffer for decompression, it must respect o
 Whenever these conditions are not possible, save the last 64KB of decoded data into a safe buffer,
 and indicate where it is saved using LZ4_setStreamDecode() before decompressing next block.
 """
-function LZ4_decompress_safe_continue(LZ4_streamDecode, src, dst, srcSize, dstCapacity)
+function LZ4_decompress_safe_continue(LZ4_streamDecode::Ptr{LZ4_streamDecode_t}, src, dst, srcSize, dstCapacity)
+    check_initialized(LZ4_streamDecode)
     ret = ccall((:LZ4_decompress_safe_continue, liblz4), Cint, (Ptr{LZ4_streamDecode_t}, Ptr{UInt8}, Ptr{UInt8}, Cint, Cint), LZ4_streamDecode, src, dst, srcSize, dstCapacity)
     check_decompression_error(ret, "LZ4_decompress_safe_continue")
 end

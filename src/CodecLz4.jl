@@ -12,6 +12,7 @@ export LZ4FrameCompressor, LZ4FrameCompressorStream,
     FrameType, normal_frame, skippable_frame,
     lz4_compress, lz4_hc_compress, lz4_decompress
 
+
 depsjl = joinpath(@__DIR__, "..", "deps", "deps.jl")
 if isfile(depsjl)
     include(depsjl)

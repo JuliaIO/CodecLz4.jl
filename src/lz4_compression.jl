@@ -18,7 +18,7 @@ function readint(mem::Memory)
 end
 
 mutable struct LZ4FastCompressor <: TranscodingStreams.Codec
-    streamptr::Ref{Ptr{LZ4_stream_t}}
+    streamptr::Ptr{LZ4_stream_t}
     acceleration::Cint
 
     # Double buffering
@@ -36,7 +36,7 @@ Creates an LZ4 compression codec.
 """
 function LZ4FastCompressor(; acceleration::Integer=0)
     return LZ4FastCompressor(
-        Ref{Ptr{LZ4_stream_t}}(C_NULL),
+        Ptr{LZ4_stream_t}(C_NULL),
         acceleration,
         Array{UInt8}(undef, 2, LZ4_compressBound(BLOCK_SIZE)),
         false,
@@ -83,7 +83,7 @@ end
 Initializes the LZ4 Compression Codec.
 """
 function TranscodingStreams.initialize(codec::LZ4FastCompressor)::Nothing
-    codec.streamptr[] = LZ4_createStream()
+    codec.streamptr = LZ4_createStream()
     nothing
 end
 
@@ -93,7 +93,8 @@ end
 Finalizes the LZ4 Compression Codec.
 """
 function TranscodingStreams.finalize(codec::LZ4FastCompressor)::Nothing
-    LZ4_freeStream(codec.streamptr[])
+    LZ4_freeStream(codec.streamptr)
+    codec.streamptr = Ptr{LZ4_stream_t}(C_NULL)
     nothing
 end
 
@@ -104,7 +105,7 @@ Starts processing with the codec
 """
 function TranscodingStreams.startproc(codec::LZ4FastCompressor, mode::Symbol, error::Error)::Symbol
     try
-        LZ4_resetStream(codec.streamptr[])
+        LZ4_resetStream(codec.streamptr)
         :ok
     catch err
         error[] = err
@@ -134,7 +135,7 @@ function TranscodingStreams.process(codec::LZ4FastCompressor, input::Memory, out
             out_buffer = Vector{UInt8}(undef, LZ4_compressBound(data_size))
             unsafe_copyto!(in_buffer, input.ptr, data_size)
 
-            data_written = LZ4_compress_fast_continue(codec.streamptr[], in_buffer, pointer(out_buffer), data_size, output.size, codec.acceleration)
+            data_written = LZ4_compress_fast_continue(codec.streamptr, in_buffer, pointer(out_buffer), data_size, output.size, codec.acceleration)
 
             # Update double buffer index
             codec.curr_buffer = !codec.curr_buffer
@@ -152,7 +153,7 @@ function TranscodingStreams.process(codec::LZ4FastCompressor, input::Memory, out
 end
 
 mutable struct LZ4SafeDecompressor <: TranscodingStreams.Codec
-    streamptr::Ref{Ptr{LZ4_stream_t}}
+    streamptr::Ptr{LZ4_streamDecode_t}
 
     # Double buffering
     buffer::Array{UInt8,2}
@@ -166,7 +167,7 @@ Creates an LZ4 compression codec.
 """
 function LZ4SafeDecompressor()
     return LZ4SafeDecompressor(
-        Ref{Ptr{LZ4_stream_t}}(C_NULL),
+        Ptr{LZ4_streamDecode_t}(C_NULL),
         Array{UInt8}(undef, 2, BLOCK_SIZE),
         false,
     )
@@ -207,7 +208,7 @@ end
 Initializes the LZ4 Compression Codec.
 """
 function TranscodingStreams.initialize(codec::LZ4SafeDecompressor)::Nothing
-    codec.streamptr[] = LZ4_createStream()
+    codec.streamptr = LZ4_createStreamDecode()
     nothing
 end
 
@@ -217,7 +218,8 @@ end
 Finalizes the LZ4F Compression Codec.
 """
 function TranscodingStreams.finalize(codec::LZ4SafeDecompressor)::Nothing
-    LZ4_freeStream(codec.streamptr[])
+    LZ4_freeStreamDecode(codec.streamptr)
+    codec.streamptr = Ptr{LZ4_streamDecode_t}(C_NULL)
     nothing
 end
 
@@ -228,7 +230,7 @@ Starts processing with the codec
 """
 function TranscodingStreams.startproc(codec::LZ4SafeDecompressor, mode::Symbol, error::Error)::Symbol
     try
-        LZ4_resetStream(codec.streamptr[])
+        LZ4_setStreamDecode(codec.streamptr)
         :ok
     catch err
         error[] = err
@@ -260,7 +262,7 @@ function TranscodingStreams.process(codec::LZ4SafeDecompressor, input::Memory, o
             out_buffer = codec.buffer[codec.curr_buffer+1, :]
             codec.curr_buffer = !codec.curr_buffer
 
-            data_written = LZ4_decompress_safe_continue(codec.streamptr[], input.ptr+CINT_SIZE, pointer(out_buffer), data_size, BLOCK_SIZE)
+            data_written = LZ4_decompress_safe_continue(codec.streamptr, input.ptr+CINT_SIZE, pointer(out_buffer), data_size, output.size)
 
             # Update double buffer index
             codec.curr_buffer = !codec.curr_buffer

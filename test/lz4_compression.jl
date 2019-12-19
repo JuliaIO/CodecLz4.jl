@@ -27,7 +27,7 @@
         stream = LZ4SafeDecompressorStream(LZ4FastCompressorStream(file))
         flush(stream)
 
-        @test hash(read(stream)) == hash(text)
+        @test read(stream) == text
         close(stream)
         close(file)
 
@@ -35,18 +35,67 @@
         stream = LZ4SafeDecompressorStream(LZ4FastCompressorStream(file; acceleration = 5))
         flush(stream)
 
-        @test hash(read(stream)) == hash(text)
+        @test read(stream) == text
         close(stream)
         close(file)
-
 
         file = IOBuffer("")
         stream = LZ4SafeDecompressorStream(LZ4FastCompressorStream(file))
         flush(stream)
 
-        @test hash(read(stream)) == hash(b"")
+        @test read(stream) == b""
         close(stream)
         close(file)
+
+    end
+
+    @testset "Errors" begin
+        # Malformed decompression input
+        @test_throws CodecLz4.LZ4Exception transcode(LZ4SafeDecompressor, text)
+
+        # Properly compressed but not formatted as a stream
+        compressed = lz4_compress(text)
+        @test_throws CodecLz4.LZ4Exception transcode(LZ4SafeDecompressor, text)
+
+        # Uninitialized
+        input = Memory(Vector{UInt8}(text))
+        output = Memory(Vector{UInt8}(undef, 1280))
+        not_initialized = LZ4FastCompressor()
+        @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
+        @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0, 0, :error)
+
+
+        # Compression into too-small buffer
+        output = Memory(Vector{UInt8}(undef, 1))
+        compressor = LZ4FastCompressor()
+
+        try
+            @test_nowarn TranscodingStreams.initialize(compressor)
+            @test TranscodingStreams.startproc(compressor, :read, Error()) == :ok
+            err = Error()
+            @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
+
+            @test err[] isa CodecLz4.LZ4Exception
+            @test err[].msg == "Compression failed."
+        finally
+            TranscodingStreams.finalize(compressor)
+        end
+
+        # Decompression into too-small buffer
+        output = Memory(Vector{UInt8}(undef, 1))
+        compressed = transcode(LZ4FastCompressor, text)
+        decompressor = LZ4SafeDecompressor()
+        try
+            @test_nowarn TranscodingStreams.initialize(decompressor)
+            @test TranscodingStreams.startproc(decompressor, :read, Error()) == :ok
+            err = Error()
+            @test TranscodingStreams.process(decompressor, Memory(compressed), output, err) == (0, 0, :error)
+
+            @test err[] isa CodecLz4.LZ4Exception
+            @test err[].msg == "Decompression failed."
+        finally
+            TranscodingStreams.finalize(decompressor)
+        end
     end
 
     @testset "dst size fix" begin

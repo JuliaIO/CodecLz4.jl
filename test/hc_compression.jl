@@ -26,7 +26,7 @@
         stream = LZ4SafeDecompressorStream(LZ4HCCompressorStream(file))
         flush(stream)
 
-        @test hash(read(stream)) == hash(text)
+        @test read(stream) == text
         close(stream)
         close(file)
 
@@ -34,7 +34,7 @@
         stream = LZ4SafeDecompressorStream(LZ4HCCompressorStream(file; compressionlevel = 5))
         flush(stream)
 
-        @test hash(read(stream)) == hash(text)
+        @test read(stream) == text
         close(stream)
         close(file)
 
@@ -43,7 +43,7 @@
         stream = LZ4SafeDecompressorStream(LZ4HCCompressorStream(file))
         flush(stream)
 
-        @test hash(read(stream)) == hash(b"")
+        @test read(stream) == b""
         close(stream)
         close(file)
     end

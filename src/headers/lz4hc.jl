@@ -5,6 +5,12 @@ const LZ4HC_CLEVEL_DEFAULT = 9
 const LZ4HC_CLEVEL_OPT_MIN = 11
 const LZ4HC_CLEVEL_MAX = 12
 
+function check_initialized(stream::Ptr{LZ4_streamHC_t})
+    if stream == Ptr{LZ4_streamHC_t}(C_NULL)
+        throw(LZ4Exception("LZ4_streamHC_t", "Uninitialized compression stream"))
+    end
+end
+
 """
     LZ4_compress_HC(src, dst, srcSize, dstCapacity, compressionLevel)
 
@@ -30,7 +36,11 @@ Newly created states are automatically initialized.
 Existing states can be re-used several times, using LZ4_resetStreamHC().
 """
 function LZ4_createStreamHC()
-    ccall((:LZ4_createStreamHC, liblz4), Ptr{LZ4_streamHC_t}, ())
+    str = ccall((:LZ4_createStreamHC, liblz4), Ptr{LZ4_streamHC_t}, ())
+    if str == C_NULL # Could not allocate memory
+        throw(OutOfMemoryError())
+    end
+    return str
 end
 
 """
@@ -39,11 +49,12 @@ end
 Release memory for LZ4 HC streaming state.
 Existing states can be re-used several times, using LZ4_resetStreamHC().
 """
-function LZ4_freeStreamHC(streamHCPtr)
+function LZ4_freeStreamHC(streamHCPtr::Ptr{LZ4_streamHC_t})
     ccall((:LZ4_freeStreamHC, liblz4), Cint, (Ptr{LZ4_streamHC_t},), streamHCPtr)
 end
 
-function LZ4_resetStreamHC(streamHCPtr, compressionLevel=LZ4HC_CLEVEL_DEFAULT)
+function LZ4_resetStreamHC(streamHCPtr::Ptr{LZ4_streamHC_t}, compressionLevel=LZ4HC_CLEVEL_DEFAULT)
+    check_initialized(streamHCPtr)
     ccall((:LZ4_resetStreamHC, liblz4), Cvoid, (Ptr{LZ4_streamHC_t}, Cint), streamHCPtr, compressionLevel)
 end
 
@@ -66,7 +77,8 @@ If, for any reason, previous data block can't be preserved unmodified in memory 
 you can save it to a more stable memory space, using LZ4_saveDictHC().
 Return value of LZ4_saveDictHC() is the size of dictionary effectively saved into 'safeBuffer'
 """
-function LZ4_compress_HC_continue(streamHCPtr, src, dst, srcSize, maxDstSize)
+function LZ4_compress_HC_continue(streamHCPtr::Ptr{LZ4_streamHC_t}, src, dst, srcSize, maxDstSize)
+    check_initialized(streamHCPtr)
     ret = ccall((:LZ4_compress_HC_extStateHC, liblz4), Cint, (Ptr{LZ4_streamHC_t}, Cstring, Cstring, Cint, Cint), streamHCPtr, src, dst, srcSize, maxDstSize)
     check_compression_error(ret, "LZ4_compress_HC_continue")
 end

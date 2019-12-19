@@ -20,4 +20,5 @@ test_in = b"""
     @test_throws CodecLz4.LZ4Exception lz4_hc_compress(huge_vector)
     @test_throws CodecLz4.LZ4Exception lz4_compress(huge_vector)
     @test_throws CodecLz4.LZ4Exception lz4_decompress(comp, floor(Int, length(test_in)/2))
+    @test_throws CodecLz4.LZ4Exception lz4_decompress(test_in)
 end
