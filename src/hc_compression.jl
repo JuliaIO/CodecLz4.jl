@@ -1,6 +1,7 @@
 mutable struct LZ4HCCompressor <: TranscodingStreams.Codec
     streamptr::Ptr{LZ4_streamHC_t}
     compressionlevel::Cint
+    block_size::Int
 
     # Ring buffering
     buffer::Vector{UInt8}
@@ -14,12 +15,15 @@ Creates an LZ4 compression codec.
 
 # Keywords
 - `compressionlevel::Integer=$LZ4HC_CLEVEL_DEFAULT`: compression level
+- `block_size::Integer=1024`: The size in bytes to encrypt into each block. (Max 4MB)
 """
-function LZ4HCCompressor(; compressionlevel::Integer=LZ4HC_CLEVEL_DEFAULT)
+function LZ4HCCompressor(; compressionlevel::Integer=LZ4HC_CLEVEL_DEFAULT, block_size::Integer=1024)
+    block_size > LZ4_MAX_INPUT_SIZE && throw(ArgumentError("`block_size larger` than $LZ4_MAX_INPUT_SIZE."))
     return LZ4HCCompressor(
         Ptr{LZ4_streamHC_t}(C_NULL),
         compressionlevel,
-        Vector{UInt8}(undef, 8 * LZ4_compressBound(BLOCK_SIZE)),
+        block_size,
+        Vector{UInt8}(undef, 4 * LZ4_compressBound(block_size)),
         0,
     )
 end
@@ -32,7 +36,7 @@ const LZ4HCCompressorStream{S} = TranscodingStream{LZ4HCCompressor,S} where S<:I
 Creates an LZ4 compression stream. See `LZ4HCCompressorStream()` and `TranscodingStream()` for arguments.
 """
 function LZ4HCCompressorStream(stream::IO; kwargs...)
-    x, y = splitkwargs(kwargs, (:compressionlevel,))
+    x, y = splitkwargs(kwargs, (:compressionlevel, :block_size))
     return TranscodingStream(LZ4HCCompressor(; x...), stream; y...)
 end
 
@@ -42,7 +46,7 @@ end
 Returns the expected size of the transcoded data.
 """
 function TranscodingStreams.expectedsize(codec::LZ4HCCompressor, input::Memory)::Int
-    ceil(Int, (LZ4_compressBound(BLOCK_SIZE) + CINT_SIZE) * input.size / BLOCK_SIZE)
+    ceil(Int, (LZ4_compressBound(codec.block_size) + CINT_SIZE) * input.size / codec.block_size)
 end
 
 """
@@ -104,7 +108,7 @@ function TranscodingStreams.process(codec::LZ4HCCompressor, input::Memory, outpu
         if input.size == 0
             (0, 0, :end)
         else
-            data_size = min(input.size, BLOCK_SIZE)
+            data_size = min(input.size, codec.block_size)
 
             buffer_ptr = pointer(codec.buffer) + codec.offset
             out_buffer = Vector{UInt8}(undef, LZ4_compressBound(data_size))
@@ -115,7 +119,7 @@ function TranscodingStreams.process(codec::LZ4HCCompressor, input::Memory, outpu
             unsafe_copyto!(output.ptr+CINT_SIZE, pointer(out_buffer), data_written)
 
             codec.offset += data_size
-            if codec.offset + BLOCK_SIZE >= length(codec.buffer)
+            if codec.offset + codec.block_size >= length(codec.buffer)
                 codec.offset = 0
             end
 

@@ -47,6 +47,15 @@
         close(stream)
         close(file)
 
+        teststring = rand(UInt8, 10000)
+        file = IOBuffer(teststring)
+        stream = LZ4SafeDecompressorStream(LZ4FastCompressorStream(file; block_size = 2048); block_size = 2048)
+        flush(stream)
+
+        @test read(stream) == teststring
+        close(stream)
+        close(file)
+
     end
 
     @testset "Errors" begin
@@ -92,10 +101,29 @@
             @test TranscodingStreams.process(decompressor, Memory(compressed), output, err) == (0, 0, :error)
 
             @test err[] isa CodecLz4.LZ4Exception
+            @test err[].msg == "Improperly sized `output`"
+        finally
+            TranscodingStreams.finalize(decompressor)
+        end
+
+        # Decompression with too-small block_size
+        output = Memory(Vector{UInt8}(undef, 1))
+        compressed = transcode(LZ4FastCompressor, text)
+        decompressor = LZ4SafeDecompressor(; block_size = 200)
+        try
+            @test_nowarn TranscodingStreams.initialize(decompressor)
+            @test TranscodingStreams.startproc(decompressor, :read, Error()) == :ok
+            err = Error()
+            @test TranscodingStreams.process(decompressor, Memory(compressed), output, err) == (0, 0, :error)
+
+            @test err[] isa CodecLz4.LZ4Exception
             @test err[].msg == "Decompression failed."
         finally
             TranscodingStreams.finalize(decompressor)
         end
+
+        # Block size too large
+        @test_throws ArgumentError LZ4FastCompressor(; block_size = CodecLz4.LZ4_MAX_INPUT_SIZE + 1)
     end
 
     @testset "dst size fix" begin
