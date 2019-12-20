@@ -75,7 +75,7 @@
             @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
 
             @test err[] isa CodecLz4.LZ4Exception
-            @test err[].msg == "Compression failed."
+            @test err[].msg == "Improperly sized `output`"
         finally
             TranscodingStreams.finalize(compressor)
         end

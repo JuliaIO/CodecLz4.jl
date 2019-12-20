@@ -17,8 +17,13 @@ Creates an LZ4 compression codec.
 - `compressionlevel::Integer=$LZ4HC_CLEVEL_DEFAULT`: compression level
 - `block_size::Integer=1024`: The size in bytes to encrypt into each block. (Max 4MB)
 """
-function LZ4HCCompressor(; compressionlevel::Integer=LZ4HC_CLEVEL_DEFAULT, block_size::Integer=1024)
-    block_size > LZ4_MAX_INPUT_SIZE && throw(ArgumentError("`block_size larger` than $LZ4_MAX_INPUT_SIZE."))
+function LZ4HCCompressor(;
+    compressionlevel::Integer=LZ4HC_CLEVEL_DEFAULT,
+    block_size::Integer=1024
+)
+    if block_size > LZ4_MAX_INPUT_SIZE
+        throw(ArgumentError("`block_size` larger than $LZ4_MAX_INPUT_SIZE."))
+    end
     return LZ4HCCompressor(
         Ptr{LZ4_streamHC_t}(C_NULL),
         compressionlevel,
@@ -33,7 +38,8 @@ const LZ4HCCompressorStream{S} = TranscodingStream{LZ4HCCompressor,S} where S<:I
 """
     LZ4HCCompressorStream(stream::IO; kwargs...)
 
-Creates an LZ4 compression stream. See `LZ4HCCompressorStream()` and `TranscodingStream()` for arguments.
+Creates an LZ4 compression stream.
+See `LZ4HCCompressorStream()` and `TranscodingStream()` for arguments.
 """
 function LZ4HCCompressorStream(stream::IO; kwargs...)
     x, y = splitkwargs(kwargs, (:compressionlevel, :block_size))
@@ -46,7 +52,10 @@ end
 Returns the expected size of the transcoded data.
 """
 function TranscodingStreams.expectedsize(codec::LZ4HCCompressor, input::Memory)::Int
-    ceil(Int, (LZ4_compressBound(codec.block_size) + CINT_SIZE) * input.size / codec.block_size)
+    num_blocks = ceil(Int, input.size / codec.block_size)
+    compressed_size = LZ4_compressBound(codec.block_size) + CINT_SIZE
+
+    return compressed_size * num_blocks
 end
 
 """
@@ -55,7 +64,7 @@ end
 Returns the minimum output size of `process`.
 """
 function TranscodingStreams.minoutsize(codec::LZ4HCCompressor, input::Memory)::Int
-    LZ4_compressBound(input.size)
+    LZ4_compressBound(input.size) + CINT_SIZE
 end
 
 """
@@ -84,7 +93,12 @@ end
 
 Starts processing with the codec
 """
-function TranscodingStreams.startproc(codec::LZ4HCCompressor, mode::Symbol, error::Error)::Symbol
+function TranscodingStreams.startproc(
+    codec::LZ4HCCompressor,
+    mode::Symbol,
+    error::Error
+)::Symbol
+
     try
         LZ4_resetStreamHC(codec.streamptr, codec.compressionlevel)
         :ok
@@ -103,7 +117,13 @@ https://github.com/lz4/lz4/blob/dev/examples/HCStreaming_ringBuffer.c
 wherein each block of encoded data is prefixed by the number of bytes contained in that block.
 Decoding can be done through the LZ4SafeDecompressor.
 """
-function TranscodingStreams.process(codec::LZ4HCCompressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
+function TranscodingStreams.process(
+    codec::LZ4HCCompressor,
+    input::Memory,
+    output::Memory,
+    error::Error
+)::Tuple{Int,Int,Symbol}
+
     try
         if input.size == 0
             (0, 0, :end)
@@ -114,16 +134,27 @@ function TranscodingStreams.process(codec::LZ4HCCompressor, input::Memory, outpu
             out_buffer = Vector{UInt8}(undef, LZ4_compressBound(data_size))
             unsafe_copyto!(buffer_ptr, input.ptr, data_size)
 
-            data_written = LZ4_compress_HC_continue(codec.streamptr, buffer_ptr, pointer(out_buffer), data_size, output.size)
-            writeint(output, data_written)
-            unsafe_copyto!(output.ptr+CINT_SIZE, pointer(out_buffer), data_written)
+            compressed_size = LZ4_compress_HC_continue(
+                codec.streamptr,
+                buffer_ptr,
+                pointer(out_buffer),
+                data_size,
+                length(out_buffer)
+            )
 
+            if output.size < compressed_size + CINT_SIZE
+                throw(LZ4Exception("LZ4HCCompressor", "Improperly sized `output`"))
+            end
+            writeint(output, compressed_size)
+            unsafe_copyto!(output.ptr+CINT_SIZE, pointer(out_buffer), compressed_size)
+
+            # Update ring buffer
             codec.offset += data_size
             if codec.offset + codec.block_size >= length(codec.buffer)
                 codec.offset = 0
             end
 
-            (data_size, data_written + CINT_SIZE, :ok)
+            (data_size, compressed_size + CINT_SIZE, :ok)
         end
 
     catch err

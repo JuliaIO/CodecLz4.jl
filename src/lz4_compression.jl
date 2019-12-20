@@ -36,7 +36,10 @@ Creates an LZ4 compression codec.
 - `block_size::Integer=1024`: The size in bytes to encrypt into each block.
 """
 function LZ4FastCompressor(; acceleration::Integer=0, block_size::Integer=1024)
-    block_size > LZ4_MAX_INPUT_SIZE && throw(ArgumentError("`block_size larger` than $LZ4_MAX_INPUT_SIZE."))
+    if block_size > LZ4_MAX_INPUT_SIZE
+        throw(ArgumentError("`block_size` larger than $LZ4_MAX_INPUT_SIZE."))
+    end
+
     return LZ4FastCompressor(
         Ptr{LZ4_stream_t}(C_NULL),
         acceleration,
@@ -64,11 +67,10 @@ end
 Returns the expected size of the transcoded data.
 """
 function TranscodingStreams.expectedsize(codec::LZ4FastCompressor, input::Memory)::Int
-    bound = LZ4_compressBound(input.size)
-    if bound == 0
-        return ceil(Int, (LZ4_compressBound(codec.block_size) + CINT_SIZE) * input.size / codec.block_size)
-    end
-    bound
+    num_blocks = ceil(Int, input.size / codec.block_size)
+    compressed_size = LZ4_compressBound(codec.block_size) + CINT_SIZE
+
+    return compressed_size * num_blocks
 end
 
 """
@@ -77,7 +79,7 @@ end
 Returns the minimum output size of `process`.
 """
 function TranscodingStreams.minoutsize(codec::LZ4FastCompressor, input::Memory)::Int
-    LZ4_compressBound(input.size)
+    LZ4_compressBound(input.size) + CINT_SIZE
 end
 
 """
@@ -106,7 +108,12 @@ end
 
 Starts processing with the codec
 """
-function TranscodingStreams.startproc(codec::LZ4FastCompressor, mode::Symbol, error::Error)::Symbol
+function TranscodingStreams.startproc(
+    codec::LZ4FastCompressor,
+    mode::Symbol,
+    error::Error
+)::Symbol
+
     try
         LZ4_resetStream(codec.streamptr)
         :ok
@@ -125,12 +132,16 @@ https://github.com/lz4/lz4/blob/dev/examples/blockStreaming_doubleBuffer.c
 wherein each block of encoded data is prefixed by the number of bytes contained in that block.
 Decoding can be done through the LZ4SafeDecompressor.
 """
-function TranscodingStreams.process(codec::LZ4FastCompressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
-    data_read = 0
-    data_written = 0
+function TranscodingStreams.process(
+    codec::LZ4FastCompressor,
+    input::Memory,
+    output::Memory,
+    error::Error
+)::Tuple{Int,Int,Symbol}
+
     try
         if input.size == 0
-            (data_read, data_written, :end)
+            (0, 0, :end)
         else
             in_buffer = pointer(codec.buffer[codec.curr_buffer + 1, :])
 
@@ -138,20 +149,29 @@ function TranscodingStreams.process(codec::LZ4FastCompressor, input::Memory, out
             out_buffer = Vector{UInt8}(undef, LZ4_compressBound(data_size))
             unsafe_copyto!(in_buffer, input.ptr, data_size)
 
-            data_written = LZ4_compress_fast_continue(codec.streamptr, in_buffer, pointer(out_buffer), data_size, output.size, codec.acceleration)
+            compressed_size = LZ4_compress_fast_continue(
+                codec.streamptr,
+                in_buffer,
+                pointer(out_buffer),
+                data_size,
+                length(out_buffer),
+                codec.acceleration,
+            )
 
             # Update double buffer index
             codec.curr_buffer = !codec.curr_buffer
 
-            writeint(output, data_written)
-            unsafe_copyto!(output.ptr + CINT_SIZE, pointer(out_buffer), data_written)
+            if output.size < compressed_size + CINT_SIZE
+                throw(LZ4Exception("LZ4FastCompressor", "Improperly sized `output`"))
+            end
+            writeint(output, compressed_size)
+            unsafe_copyto!(output.ptr + CINT_SIZE, pointer(out_buffer), compressed_size)
 
-            (data_size, data_written + CINT_SIZE, :ok)
+            (data_size, compressed_size + CINT_SIZE, :ok)
         end
-
     catch err
         error[] = err
-        (data_read, data_written, :error)
+        (0, 0, :error)
     end
 end
 
@@ -171,6 +191,7 @@ Creates an LZ4 compression codec.
 
 # Keywords
 - `block_size::Integer=1024`: The size in bytes of unecrypted data contained in each block.
+    Must match or exceed the compression `block_size` or decompression will fail.
 """
 function LZ4SafeDecompressor(; block_size::Integer=1024)
     return LZ4SafeDecompressor(
@@ -237,7 +258,12 @@ end
 
 Starts processing with the codec
 """
-function TranscodingStreams.startproc(codec::LZ4SafeDecompressor, mode::Symbol, error::Error)::Symbol
+function TranscodingStreams.startproc(
+    codec::LZ4SafeDecompressor,
+    mode::Symbol,
+    error::Error
+)::Symbol
+
     try
         LZ4_setStreamDecode(codec.streamptr)
         :ok
@@ -255,12 +281,16 @@ The process follows the decompression example from
 https://github.com/lz4/lz4/blob/dev/examples/blockStreaming_doubleBuffer.c
 and requires each block of encoded data to be prefixed by the number of bytes contained in that block.
 """
-function TranscodingStreams.process(codec::LZ4SafeDecompressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
-    data_read = 0
-    data_written = 0
+function TranscodingStreams.process(
+    codec::LZ4SafeDecompressor,
+    input::Memory,
+    output::Memory,
+    error::Error
+)::Tuple{Int,Int,Symbol}
+
     try
         if input.size == 0
-            (data_read, data_written, :end)
+            (0, 0, :end)
         else
             if input.size < CINT_SIZE
                 throw(LZ4Exception("LZ4SafeDecompressor", "Improperly formatted input"))
@@ -269,27 +299,28 @@ function TranscodingStreams.process(codec::LZ4SafeDecompressor, input::Memory, o
 
             # Get buffer from double buffer
             out_buffer = codec.buffer[codec.curr_buffer+1, :]
-            codec.curr_buffer = !codec.curr_buffer
 
-            data_written = LZ4_decompress_safe_continue(codec.streamptr, input.ptr+CINT_SIZE, pointer(out_buffer), data_size, length(out_buffer))
+            decompressed_size = LZ4_decompress_safe_continue(
+                codec.streamptr,
+                input.ptr+CINT_SIZE,
+                pointer(out_buffer),
+                data_size,
+                length(out_buffer)
+            )
 
             # Update double buffer index
             codec.curr_buffer = !codec.curr_buffer
 
-            if output.size < data_written
-                data_written = 0
+            if output.size < decompressed_size
                 throw(LZ4Exception("LZ4SafeDecompressor", "Improperly sized `output`"))
             end
-            unsafe_copyto!(output.ptr, pointer(out_buffer), data_written)
+            unsafe_copyto!(output.ptr, pointer(out_buffer), decompressed_size)
 
-            codec.curr_buffer = !codec.curr_buffer
-
-            (data_size + CINT_SIZE, data_written, :ok)
+            (data_size + CINT_SIZE, decompressed_size, :ok)
         end
-
     catch err
         error[] = err
-        (data_read, data_written, :error)
+        (0, 0, :error)
     end
 end
 

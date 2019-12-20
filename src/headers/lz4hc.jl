@@ -1,4 +1,5 @@
 # Julia wrapper for header: /usr/local/include/lz4hc.h
+# docstrings copied from /usr/local/include/lz4hc.h
 
 const LZ4HC_CLEVEL_MIN = 3
 const LZ4HC_CLEVEL_DEFAULT = 9

@@ -1,4 +1,5 @@
 # Julia wrapper for header: /usr/local/include/lz4.h
+# docstrings copied from /usr/local/include/lz4.h
 
 function check_compression_error(ret::Integer, function_name::AbstractString)
     ret == 0 && throw(LZ4Exception(function_name, "Compression failed."))

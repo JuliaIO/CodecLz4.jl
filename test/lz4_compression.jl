@@ -61,6 +61,7 @@
     @testset "Errors" begin
         # Malformed decompression input
         @test_throws CodecLz4.LZ4Exception transcode(LZ4SafeDecompressor, text)
+        @test_throws CodecLz4.LZ4Exception transcode(LZ4SafeDecompressor, [0x00])
 
         # Properly compressed but not formatted as a stream
         compressed = lz4_compress(text)
@@ -72,6 +73,11 @@
         not_initialized = LZ4FastCompressor()
         @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
         @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0, 0, :error)
+
+        compressed = Memory(transcode(LZ4FastCompressor, text))
+        not_initialized = LZ4SafeDecompressor()
+        @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
+        @test TranscodingStreams.process(not_initialized, compressed, output, Error()) == (0, 0, :error)
 
 
         # Compression into too-small buffer
@@ -85,7 +91,7 @@
             @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
 
             @test err[] isa CodecLz4.LZ4Exception
-            @test err[].msg == "Compression failed."
+            @test err[].msg == "Improperly sized `output`"
         finally
             TranscodingStreams.finalize(compressor)
         end
