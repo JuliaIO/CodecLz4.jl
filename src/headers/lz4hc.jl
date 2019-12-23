@@ -13,19 +13,18 @@ function check_initialized(stream::Ptr{LZ4_streamHC_t})
 end
 
 """
-    LZ4_compress_HC(src, dst, srcSize, dstCapacity, compressionLevel)
+    LZ4_compress_HC(src, dst, srcsize, dstcapacity, compressionlevel)
 
 Compress data from `src` into `dst`, using the more powerful but slower "HC" algorithm.
 `dst` must be already allocated.
-Compression is guaranteed to succeed if `dstCapacity >= LZ4_compressBound(srcSize)`
-Max supported `srcSize` value is LZ4_MAX_INPUT_SIZE
-`compressionLevel`: any value between 1 and LZ4HC_CLEVEL_MAX will work.
+Compression is guaranteed to succeed if `dstcapacity >= LZ4_compressBound(srcsize)`
+Max supported `srcsize` value is LZ4_MAX_INPUT_SIZE
+`compressionlevel`: any value between 1 and LZ4HC_CLEVEL_MAX will work.
                     Values > LZ4HC_CLEVEL_MAX behave the same as LZ4HC_CLEVEL_MAX.
-@return: the number of bytes written into 'dst'
-           or 0 if compression fails.
+Returns the number of bytes written into `dst`
 """
-function LZ4_compress_HC(src, dst, srcSize, dstCapacity, compressionLevel)
-    ret = ccall((:LZ4_compress_HC, liblz4), Cint, (Cstring, Cstring, Cint, Cint, Cint), src, dst, srcSize, dstCapacity, compressionLevel)
+function LZ4_compress_HC(src, dst, srcsize, dstcapacity, compressionlevel=LZ4HC_CLEVEL_DEFAULT)
+    ret = ccall((:LZ4_compress_HC, liblz4), Cint, (Cstring, Cstring, Cint, Cint, Cint), src, dst, srcsize, dstcapacity, compressionlevel)
     check_compression_error(ret, "LZ4_compress_HC")
 end
 
@@ -45,42 +44,38 @@ function LZ4_createStreamHC()
 end
 
 """
-    LZ4_freeStreamHC(streamHCPtr)
+    LZ4_freeStreamHC(streamptr)
 
 Release memory for LZ4 HC streaming state.
 Existing states can be re-used several times, using LZ4_resetStreamHC().
 """
-function LZ4_freeStreamHC(streamHCPtr::Ptr{LZ4_streamHC_t})
-    ccall((:LZ4_freeStreamHC, liblz4), Cint, (Ptr{LZ4_streamHC_t},), streamHCPtr)
+function LZ4_freeStreamHC(streamptr::Ptr{LZ4_streamHC_t})
+    ccall((:LZ4_freeStreamHC, liblz4), Cint, (Ptr{LZ4_streamHC_t},), streamptr)
 end
 
-function LZ4_resetStreamHC(streamHCPtr::Ptr{LZ4_streamHC_t}, compressionLevel=LZ4HC_CLEVEL_DEFAULT)
-    check_initialized(streamHCPtr)
-    ccall((:LZ4_resetStreamHC, liblz4), Cvoid, (Ptr{LZ4_streamHC_t}, Cint), streamHCPtr, compressionLevel)
+function LZ4_resetStreamHC(streamptr::Ptr{LZ4_streamHC_t}, compressionlevel=LZ4HC_CLEVEL_DEFAULT)
+    check_initialized(streamptr)
+    ccall((:LZ4_resetStreamHC, liblz4), Cvoid, (Ptr{LZ4_streamHC_t}, Cint), streamptr, compressionlevel)
 end
 
 """
-These functions compress data in successive blocks of any size, using previous blocks as dictionary.
+    LZ4_compress_HC_continue(streamptr::Ptr{LZ4_streamHC_t}, src, dst, srcsize, maxdstsize)
+
+Compress data in successive blocks of any size, using previous blocks as dictionary.
 One key assumption is that previous blocks (up to 64 KB) remain read-accessible while compressing next blocks.
 There is an exception for ring buffers, which can be smaller than 64 KB.
 Ring buffers scenario is automatically detected and handled by LZ4_compress_HC_continue().
 
 Before starting compression, state must be properly initialized, using LZ4_resetStreamHC().
-A first "fictional block" can then be designated as initial dictionary, using LZ4_loadDictHC() (Optional).
 
 Then, use LZ4_compress_HC_continue() to compress each successive block.
 Previous memory blocks (including initial dictionary when present) must remain accessible and unmodified during compression.
-'dst' buffer should be sized to handle worst case scenarios (see LZ4_compressBound()), to ensure operation success.
+`dst` buffer should be sized to handle worst case scenarios (see LZ4_compressBound()), to ensure operation success.
 Because in case of failure, the API does not guarantee context recovery, and context will have to be reset.
-If `dst` buffer budget cannot be >= LZ4_compressBound(), consider using LZ4_compress_HC_continue_destSize() instead.
-
-If, for any reason, previous data block can't be preserved unmodified in memory for next compression block,
-you can save it to a more stable memory space, using LZ4_saveDictHC().
-Return value of LZ4_saveDictHC() is the size of dictionary effectively saved into 'safeBuffer'
 """
-function LZ4_compress_HC_continue(streamHCPtr::Ptr{LZ4_streamHC_t}, src, dst, srcSize, maxDstSize)
-    check_initialized(streamHCPtr)
-    ret = ccall((:LZ4_compress_HC_extStateHC, liblz4), Cint, (Ptr{LZ4_streamHC_t}, Cstring, Cstring, Cint, Cint), streamHCPtr, src, dst, srcSize, maxDstSize)
+function LZ4_compress_HC_continue(streamptr::Ptr{LZ4_streamHC_t}, src, dst, srcsize, maxdstsize)
+    check_initialized(streamptr)
+    ret = ccall((:LZ4_compress_HC_extStateHC, liblz4), Cint, (Ptr{LZ4_streamHC_t}, Cstring, Cstring, Cint, Cint), streamptr, src, dst, srcsize, maxdstsize)
     check_compression_error(ret, "LZ4_compress_HC_continue")
 end
 

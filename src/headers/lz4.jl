@@ -24,46 +24,46 @@ function check_initialized(stream::Ptr{LZ4_streamDecode_t})
 end
 
 """
-    LZ4_compress_fast(src, dst, srcsize, dstCapacity)
+    LZ4_compress_fast(src, dst, srcsize, dstcapacity=1)
 
-Compresses 'srcSize' bytes from buffer 'src'
-into already allocated 'dst' buffer of size 'dstCapacity'.
-Compression is guaranteed to succeed if 'dstCapacity' >= LZ4_compressBound(srcSize).
+Compresses `srcsize` bytes from buffer `src`
+into already allocated `dst` buffer of size `dstcapacity`.
+Compression is guaranteed to succeed if `dstcapacity` >= LZ4_compressBound(srcsize).
 It also runs faster, so it's a recommended setting.
-If the function cannot compress 'src' into a limited 'dst' budget,
+If the function cannot compress `src` into a limited `dst` budget,
 compression stops *immediately*, and the function result is zero.
-As a consequence, 'dst' content is not valid.
+As a consequence, `dst` content is not valid.
 
-Also allows to select an "acceleration" factor.
+Also allows to select an `acceleration` factor.
 The larger the acceleration value, the faster the algorithm, but also the lesser the compression.
 It's a trade-off. It can be fine tuned, with each successive value providing roughly +~3% to speed.
 Values <= 0 will be replaced by the default which is 1.
 
-This function never writes outside 'dst' buffer, nor read outside 'source' buffer.
-    srcSize : supported max value is LZ4_MAX_INPUT_VALUE
-    dstCapacity : full or partial size of buffer 'dst' (which must be already allocated)
-    return  : the number of bytes written into buffer 'dst' (necessarily <= dstCapacity)
-              or 0 if compression fails
+This function never writes outside `dst` buffer, nor read outside `source` buffer.
+    srcsize : supported max value is LZ4_MAX_INPUT_VALUE
+    dstcapacity : full or partial size of buffer `dst` (which must be already allocated)
+
+Returns the number of bytes written into buffer `dst` (necessarily <= dstcapacity)
 """
-function LZ4_compress_fast(src, dst, srcsize, dstCapacity, acceleration = 1)
-    ret = ccall((:LZ4_compress_fast, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint, Cint), src, dst, srcsize, dstCapacity, acceleration)
+function LZ4_compress_fast(src, dst, srcsize, dstcapacity, acceleration=1)
+    ret = ccall((:LZ4_compress_fast, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint, Cint), src, dst, srcsize, dstcapacity, acceleration)
     check_compression_error(ret, "LZ4_compress_fast")
 end
 
 """
-    LZ4_compress_destSize(src, dst, srcsize, dstCapacity)
+    LZ4_compress_destSize(src, dst, srcsize, dstcapacity)
 
-Reverse the logic : compresses as much data as possible from 'src' buffer
-into already allocated buffer 'dst' of size 'dstCapacity'.
-This function either compresses the entire 'src' content into 'dst' if it's large enough,
-or fill 'dst' buffer completely with as much data as possible from 'src'.
-    *srcSizePtr : will be modified to indicate how many bytes where read from 'src' to fill 'dst'.
+Reverse the logic : compresses as much data as possible from `src` buffer
+into already allocated buffer `dst` of size `dstcapacity`.
+This function either compresses the entire `src` content into `dst` if it's large enough,
+or fill `dst` buffer completely with as much data as possible from `src`.
+    *srcsize : will be modified to indicate how many bytes where read from `src` to fill `dst`.
                   New value is necessarily <= old value.
-    return : Nb bytes written into 'dst' (necessarily <= dstCapacity)
-             or 0 if compression fails
+
+Returns number of bytes written into `dst` (necessarily <= dstcapacity)
 """
-function LZ4_compress_destSize(src, dst, srcsize, dstCapacity)
-    ret = ccall((:LZ4_compress_destSize, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Ptr{Cint}, Cint), src, dst, srcsize, dstCapacity)
+function LZ4_compress_destSize(src, dst, srcsize, dstcapacity)
+    ret = ccall((:LZ4_compress_destSize, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Ptr{Cint}, Cint), src, dst, srcsize, dstcapacity)
     check_compression_error(ret, "LZ4_compress_destSize")
 end
 
@@ -73,10 +73,10 @@ end
 Provides the maximum size that LZ4 compression may output in a "worst case" scenario (input data not compressible)
 This function is primarily useful for memory allocation purposes (destination buffer size).
 Macro LZ4_COMPRESSBOUND() is also provided for compilation-time evaluation (stack memory allocation for example).
-Note that LZ4_compress_default() compress faster when dest buffer size is >= LZ4_compressBound(srcSize)
-    inputSize  : max supported value is LZ4_MAX_INPUT_SIZE
-    return : maximum output size in a "worst case" scenario
-          or 0, if input size is too large ( > LZ4_MAX_INPUT_SIZE)
+Note that LZ4_compress_default() compress faster when dest buffer size is >= LZ4_compressBound(srcsize)
+    inputsize  : max supported value is LZ4_MAX_INPUT_SIZE
+
+Returns maximum output size in a "worst case" scenario or 0, if input size is too large ( > LZ4_MAX_INPUT_SIZE)
 """
 function LZ4_compressBound(inputsize)
     ccall((:LZ4_compressBound, liblz4), Cint, (Cint,), inputsize)
@@ -116,39 +116,41 @@ function LZ4_resetStream(streamptr::Ptr{LZ4_stream_t})
 end
 
 """
-    LZ4_compress_fast_continue(streamptr, src, dst, srcSize, dstCapacity, acceleration)
+    LZ4_compress_fast_continue(streamptr, src, dst, srcsize, dstcapacity, acceleration)
 
-Compress content into 'src' using data from previously compressed blocks, improving compression ratio.
-'dst' buffer must be already allocated.
-If dstCapacity >= LZ4_compressBound(srcSize), compression is guaranteed to succeed, and runs faster.
+Compress content into `src` using data from previously compressed blocks, improving compression ratio.
+`dst` buffer must be already allocated.
+If dstcapacity >= LZ4_compressBound(srcsize), compression is guaranteed to succeed, and runs faster.
 
 Important : Up to 64KB of previously compressed data is assumed to remain present and unmodified in memory !
 Special 1 : If input buffer is a double-buffer, it can have any size, including < 64 KB.
 Special 2 : If input buffer is a ring-buffer, it can have any size, including < 64 KB.
 
-@return : size of compressed block
-          or 0 if there is an error (typically, compressed data cannot fit into 'dst')
+Returns size of compressed block.
 After an error, the stream status is invalid, it can only be reset or freed.
 """
-function LZ4_compress_fast_continue(streamptr::Ptr{LZ4_stream_t}, src, dst, srcSize, dstCapacity, acceleration=1)
+function LZ4_compress_fast_continue(streamptr::Ptr{LZ4_stream_t}, src, dst, srcsize, dstcapacity, acceleration=1)
     check_initialized(streamptr)
-    ret = ccall((:LZ4_compress_fast_continue, liblz4), Cint, (Ptr{LZ4_stream_t}, Ptr{UInt8}, Ptr{UInt8}, Cint, Cint, Cint), streamptr, src, dst, srcSize, dstCapacity, acceleration)
+    ret = ccall((:LZ4_compress_fast_continue, liblz4), Cint, (Ptr{LZ4_stream_t}, Ptr{UInt8}, Ptr{UInt8}, Cint, Cint, Cint), streamptr, src, dst, srcsize, dstcapacity, acceleration)
     check_compression_error(ret, "LZ4_compress_fast_continue")
 end
 
 """
-    LZ4_decompress_safe(src, dst, cmpsize, maxdcmpsize)
+    LZ4_decompress_safe(src, dst, cmpsize, dstcapacity)
 
-compressedSize : is the exact complete size of the compressed block.
-dstCapacity : is the size of destination buffer, which must be already allocated.
-return : the number of bytes decompressed into destination buffer (necessarily <= dstCapacity)
-         If destination buffer is not large enough, decoding will stop and output an error code (negative value).
-         If the source stream is detected malformed, the function will stop decoding and return a negative result.
-         This function is protected against buffer overflow exploits, including malicious data packets.
-         It never writes outside output buffer, nor reads outside input buffer.
+Decompresses `cmpsize` bytes from buffer `src` into `dst`.
+If destination buffer is not large enough, decoding will stop and output an error.
+If the source stream is detected malformed, the function will stop decoding and error.
+This function is protected against buffer overflow exploits, including malicious data packets.
+It never writes outside output buffer, nor reads outside input buffer.
+
+cmpsize : is the exact complete size of the compressed block.
+dstcapacity : is the size of destination buffer, which must be already allocated.
+
+Returns the number of bytes decompressed into destination buffer (necessarily <= dstcapacity)
 """
-function LZ4_decompress_safe(src, dst, cmpsize, maxdcmpsize)
-    ret = ccall((:LZ4_decompress_safe, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint), src, dst, cmpsize, maxdcmpsize)
+function LZ4_decompress_safe(src, dst, cmpsize, dstcapacity)
+    ret = ccall((:LZ4_decompress_safe, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint), src, dst, cmpsize, dstcapacity)
     check_decompression_error(ret, "LZ4_decompress_safe")
 end
 
@@ -168,33 +170,33 @@ function LZ4_createStreamDecode()
 end
 
 """
-    LZ4_freeStreamDecode(LZ4_stream)
+    LZ4_freeStreamDecode(streamptr)
 
 These decoding functions work the same as
 creation / destruction of streaming decompression tracking structure.
 A tracking structure can be re-used multiple times sequentially.
 """
-function LZ4_freeStreamDecode(LZ4_stream::Ptr{LZ4_streamDecode_t})
-    ccall((:LZ4_freeStreamDecode, liblz4), Cint, (Ptr{LZ4_streamDecode_t},), LZ4_stream)
+function LZ4_freeStreamDecode(streamptr::Ptr{LZ4_streamDecode_t})
+    ccall((:LZ4_freeStreamDecode, liblz4), Cint, (Ptr{LZ4_streamDecode_t},), streamptr)
 end
 
 """
-    LZ4_setStreamDecode(LZ4_streamDecode, dictionary, dictSize)
+    LZ4_setStreamDecode(streamptr, dictionary, dictsize)
 
 An LZ4_streamDecode_t structure can be allocated once and re-used multiple times.
 Use this function to start decompression of a new stream of blocks.
 A dictionary can optionally be set. Use NULL or size 0 for a simple reset order.
-@return : 1 if OK, 0 if error
+Returns 1 if OK
 """
-function LZ4_setStreamDecode(LZ4_streamDecode::Ptr{LZ4_streamDecode_t}, dictionary=C_NULL, dictSize=0)
-    check_initialized(LZ4_streamDecode)
-    ret = ccall((:LZ4_setStreamDecode, liblz4), Cint, (Ptr{LZ4_streamDecode_t}, Ptr{UInt8}, Cint), LZ4_streamDecode, dictionary, dictSize)
+function LZ4_setStreamDecode(streamptr::Ptr{LZ4_streamDecode_t}, dictionary=C_NULL, dictsize=0)
+    check_initialized(streamptr)
+    ret = ccall((:LZ4_setStreamDecode, liblz4), Cint, (Ptr{LZ4_streamDecode_t}, Ptr{UInt8}, Cint), streamptr, dictionary, dictsize)
     ret == 0 && throw(LZ4Exception("LZ4_setStreamDecode", "Stream reinitialization failed."))
     return ret
 end
 
 """
-    LZ4_decompress_safe_continue()
+    LZ4_decompress_safe_continue(streamptr, src, dst, srcsize, dstcapacity)
 
 These decoding functions allow decompression of consecutive blocks in "streaming" mode.
 A block is an unsplittable entity, it must be presented entirely to a decompression function.
@@ -214,8 +216,8 @@ Special : if application sets a ring buffer for decompression, it must respect o
 Whenever these conditions are not possible, save the last 64KB of decoded data into a safe buffer,
 and indicate where it is saved using LZ4_setStreamDecode() before decompressing next block.
 """
-function LZ4_decompress_safe_continue(LZ4_streamDecode::Ptr{LZ4_streamDecode_t}, src, dst, srcSize, dstCapacity)
-    check_initialized(LZ4_streamDecode)
-    ret = ccall((:LZ4_decompress_safe_continue, liblz4), Cint, (Ptr{LZ4_streamDecode_t}, Ptr{UInt8}, Ptr{UInt8}, Cint, Cint), LZ4_streamDecode, src, dst, srcSize, dstCapacity)
+function LZ4_decompress_safe_continue(streamptr::Ptr{LZ4_streamDecode_t}, src, dst, srcsize, dstcapacity)
+    check_initialized(streamptr)
+    ret = ccall((:LZ4_decompress_safe_continue, liblz4), Cint, (Ptr{LZ4_streamDecode_t}, Ptr{UInt8}, Ptr{UInt8}, Cint, Cint), streamptr, src, dst, srcsize, dstcapacity)
     check_decompression_error(ret, "LZ4_decompress_safe_continue")
 end
