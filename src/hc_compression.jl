@@ -35,7 +35,7 @@ end
 """
     LZ4HCCompressor(; kwargs...)
 
-Creates an LZ4 compression codec.
+Creates an LZ4 HC compression codec.
 
 # Keywords
 - `compressionlevel::Integer=$LZ4HC_CLEVEL_DEFAULT`: compression level
@@ -62,7 +62,7 @@ const LZ4HCCompressorStream{S} = TranscodingStream{LZ4HCCompressor,S} where S<:I
 """
     LZ4HCCompressorStream(stream::IO; kwargs...)
 
-Creates an LZ4 compression stream.
+Creates an LZ4 HC compression stream.
 See `LZ4HCCompressorStream()` and `TranscodingStream()` for arguments.
 """
 function LZ4HCCompressorStream(stream::IO; kwargs...)
@@ -73,7 +73,7 @@ end
 """
    TranscodingStreams.initialize(codec::LZ4HCCompressor)
 
-Initializes the LZ4 Compression Codec.
+Initializes the LZ4 HC compression Codec.
 """
 function TranscodingStreams.initialize(codec::LZ4HCCompressor)::Nothing
     codec.streamptr = LZ4_createStreamHC()

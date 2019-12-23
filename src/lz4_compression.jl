@@ -236,7 +236,7 @@ end
 """
     TranscodingStreams.finalize(codec::LZ4SafeDecompressor)
 
-Finalizes the LZ4F Compression Codec.
+Finalizes the LZ4SafeDecompression Codec.
 """
 function TranscodingStreams.finalize(codec::LZ4SafeDecompressor)::Nothing
     LZ4_freeStreamDecode(codec.streamptr)
