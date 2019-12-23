@@ -1,11 +1,35 @@
+mutable struct SimpleRingBuffer
+    buffer::Vector{UInt8}
+    offset::Integer
+end
+
+SimpleRingBuffer(buf_size::Integer) = SimpleRingBuffer(Vector{UInt8}(undef, buf_size), 0)
+Base.pointer(buf::SimpleRingBuffer) = pointer(buf.buffer) + buf.offset
+reset!(buf::SimpleRingBuffer) = buf.offset = 0
+
+function copy_data!(dest::SimpleRingBuffer, src::Memory, data_size::Integer)
+    checkbounds(src, data_size)
+    if length(dest.buffer) < data_size
+        throw(ArgumentError(
+            "Cannot store $data_size bytes in buffer of size $(length(dest.buffer))"
+        ))
+    end
+
+    if dest.offset + data_size > length(dest.buffer)
+        dest.offset = 0
+    end
+    data_start = pointer(dest)
+    unsafe_copyto!(data_start, src.ptr, data_size)
+
+    dest.offset += data_size
+    return data_start
+end
+
 mutable struct LZ4HCCompressor <: TranscodingStreams.Codec
     streamptr::Ptr{LZ4_streamHC_t}
     compressionlevel::Cint
     block_size::Int
-
-    # Ring buffering
-    buffer::Vector{UInt8}
-    offset::Integer
+    buffer::SimpleRingBuffer
 end
 
 """
@@ -24,12 +48,12 @@ function LZ4HCCompressor(;
     if block_size > LZ4_MAX_INPUT_SIZE
         throw(ArgumentError("`block_size` larger than $LZ4_MAX_INPUT_SIZE."))
     end
+
     return LZ4HCCompressor(
-        Ptr{LZ4_streamHC_t}(C_NULL),
+        C_NULL,
         compressionlevel,
         block_size,
-        Vector{UInt8}(undef, 4 * LZ4_compressBound(block_size)),
-        0,
+        SimpleRingBuffer(4 * block_size),
     )
 end
 
@@ -47,27 +71,6 @@ function LZ4HCCompressorStream(stream::IO; kwargs...)
 end
 
 """
-    TranscodingStreams.expectedsize(codec::LZ4HCCompressor, input::Memory)
-
-Returns the expected size of the transcoded data.
-"""
-function TranscodingStreams.expectedsize(codec::LZ4HCCompressor, input::Memory)::Int
-    num_blocks = ceil(Int, input.size / codec.block_size)
-    compressed_size = LZ4_compressBound(codec.block_size) + CINT_SIZE
-
-    return compressed_size * num_blocks
-end
-
-"""
-   TranscodingStreams.minoutsize(codec::LZ4HCCompressor, input::Memory)
-
-Returns the minimum output size of `process`.
-"""
-function TranscodingStreams.minoutsize(codec::LZ4HCCompressor, input::Memory)::Int
-    LZ4_compressBound(input.size) + CINT_SIZE
-end
-
-"""
    TranscodingStreams.initialize(codec::LZ4HCCompressor)
 
 Initializes the LZ4 Compression Codec.
@@ -78,13 +81,31 @@ function TranscodingStreams.initialize(codec::LZ4HCCompressor)::Nothing
 end
 
 """
+    TranscodingStreams.expectedsize(codec::Union{LZ4FastCompressor, LZ4HCCompressor}, input::Memory)
+
+Returns the expected size of the transcoded data.
+"""
+function TranscodingStreams.expectedsize(codec::LZ4HCCompressor, input::Memory)::Int
+    max_compressed_size(length(input), codec.block_size)
+end
+
+"""
+   TranscodingStreams.minoutsize(codec::Union{LZ4FastCompressor, LZ4HCCompressor}, input::Memory)
+
+Returns the minimum output size of `process`.
+"""
+function TranscodingStreams.minoutsize(codec::LZ4HCCompressor, input::Memory)::Int
+    LZ4_compressBound(input.size) + CINT_SIZE
+end
+
+"""
     TranscodingStreams.finalize(codec::LZ4HCCompressor)
 
-Finalizes the LZ4F Compression Codec.
+Finalizes the LZHC Compression Codec.
 """
 function TranscodingStreams.finalize(codec::LZ4HCCompressor)::Nothing
     LZ4_freeStreamHC(codec.streamptr)
-    codec.streamptr = Ptr{LZ4_streamHC_t}(C_NULL)
+    codec.streamptr = C_NULL
     nothing
 end
 
@@ -101,6 +122,7 @@ function TranscodingStreams.startproc(
 
     try
         LZ4_resetStreamHC(codec.streamptr, codec.compressionlevel)
+        reset!(codec.buffer)
         :ok
     catch err
         error[] = err
@@ -124,41 +146,29 @@ function TranscodingStreams.process(
     error::Error
 )::Tuple{Int,Int,Symbol}
 
+    input.size == 0 && return (0, 0, :end)
     try
-        if input.size == 0
-            (0, 0, :end)
-        else
-            data_size = min(input.size, codec.block_size)
+        data_size = min(input.size, codec.block_size)
 
-            buffer_ptr = pointer(codec.buffer) + codec.offset
-            out_buffer = Vector{UInt8}(undef, LZ4_compressBound(data_size))
-            unsafe_copyto!(buffer_ptr, input.ptr, data_size)
+        in_buffer = copy_data!(codec.buffer, input, data_size)
+        out_buffer = Vector{UInt8}(undef, LZ4_compressBound(data_size))
 
-            compressed_size = LZ4_compress_HC_continue(
-                codec.streamptr,
-                buffer_ptr,
-                pointer(out_buffer),
-                data_size,
-                length(out_buffer)
-            )
+        compressed_size = LZ4_compress_HC_continue(
+            codec.streamptr,
+            in_buffer,
+            pointer(out_buffer),
+            data_size,
+            length(out_buffer)
+        )
 
-            if output.size < compressed_size + CINT_SIZE
-                throw(LZ4Exception("LZ4HCCompressor", "Improperly sized `output`"))
-            end
-            writeint(output, compressed_size)
-            unsafe_copyto!(output.ptr+CINT_SIZE, pointer(out_buffer), compressed_size)
+        checkbounds(output, compressed_size + CINT_SIZE)
+        writeint(output, compressed_size)
+        unsafe_copyto!(output.ptr+CINT_SIZE, pointer(out_buffer), compressed_size)
 
-            # Update ring buffer
-            codec.offset += data_size
-            if codec.offset + codec.block_size >= length(codec.buffer)
-                codec.offset = 0
-            end
-
-            (data_size, compressed_size + CINT_SIZE, :ok)
-        end
+        return (data_size, compressed_size + CINT_SIZE, :ok)
 
     catch err
         error[] = err
-        (0, 0, :error)
+        return (0, 0, :error)
     end
 end

@@ -61,7 +61,7 @@
     @testset "Errors" begin
         # Malformed decompression input
         @test_throws CodecLz4.LZ4Exception transcode(LZ4SafeDecompressor, text)
-        @test_throws CodecLz4.LZ4Exception transcode(LZ4SafeDecompressor, [0x00])
+        @test_throws BoundsError transcode(LZ4SafeDecompressor, [0x00])
 
         # Properly compressed but not formatted as a stream
         compressed = lz4_compress(text)
@@ -90,8 +90,7 @@
             err = Error()
             @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
 
-            @test err[] isa CodecLz4.LZ4Exception
-            @test err[].msg == "Improperly sized `output`"
+            @test err[] isa BoundsError
         finally
             TranscodingStreams.finalize(compressor)
         end
@@ -106,8 +105,7 @@
             err = Error()
             @test TranscodingStreams.process(decompressor, Memory(compressed), output, err) == (0, 0, :error)
 
-            @test err[] isa CodecLz4.LZ4Exception
-            @test err[].msg == "Improperly sized `output`"
+            @test err[] isa BoundsError
         finally
             TranscodingStreams.finalize(decompressor)
         end

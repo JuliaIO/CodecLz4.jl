@@ -74,8 +74,7 @@
             err = Error()
             @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
 
-            @test err[] isa CodecLz4.LZ4Exception
-            @test err[].msg == "Improperly sized `output`"
+            @test err[] isa BoundsError
         finally
             TranscodingStreams.finalize(compressor)
         end

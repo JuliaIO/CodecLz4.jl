@@ -16,14 +16,30 @@ function readint(mem::Memory)
     return reinterpret(Cint, buf)[1]
 end
 
+mutable struct SimpleDoubleBuffer
+    buffer::Array{UInt8, 2}
+    next::Bool
+end
+
+SimpleDoubleBuffer(buf_size::Integer) = SimpleDoubleBuffer(Array{UInt8}(undef, 2, buf_size), false)
+function get_buffer!(db::SimpleDoubleBuffer)
+    out_buffer = db.buffer[db.next+1, :]
+    db.next = !db.next  # Update index
+    return out_buffer
+end
+
+function max_compressed_size(in_size::Integer, block_size::Integer)
+    num_blocks = ceil(Int, in_size / block_size)
+    compressed_size = LZ4_compressBound(block_size) + CINT_SIZE
+
+    return compressed_size * num_blocks
+end
+
 mutable struct LZ4FastCompressor <: TranscodingStreams.Codec
     streamptr::Ptr{LZ4_stream_t}
     acceleration::Cint
     block_size::Int
-
-    # Double buffering
-    buffer::Array{UInt8,2}
-    curr_buffer::Bool
+    buffer::SimpleDoubleBuffer
 end
 
 """
@@ -40,13 +56,7 @@ function LZ4FastCompressor(; acceleration::Integer=0, block_size::Integer=1024)
         throw(ArgumentError("`block_size` larger than $LZ4_MAX_INPUT_SIZE."))
     end
 
-    return LZ4FastCompressor(
-        Ptr{LZ4_stream_t}(C_NULL),
-        acceleration,
-        block_size,
-        Array{UInt8}(undef, 2, LZ4_compressBound(block_size)),
-        false,
-    )
+    return LZ4FastCompressor(C_NULL, acceleration, block_size, SimpleDoubleBuffer(block_size))
 end
 
 const LZ4FastCompressorStream{S} = TranscodingStream{LZ4FastCompressor,S} where S<:IO
@@ -62,19 +72,16 @@ function LZ4FastCompressorStream(stream::IO; kwargs...)
 end
 
 """
-    TranscodingStreams.expectedsize(codec::LZ4FastCompressor, input::Memory)
+    TranscodingStreams.expectedsize(codec::Union{LZ4FastCompressor, LZ4HCCompressor}, input::Memory)
 
 Returns the expected size of the transcoded data.
 """
 function TranscodingStreams.expectedsize(codec::LZ4FastCompressor, input::Memory)::Int
-    num_blocks = ceil(Int, input.size / codec.block_size)
-    compressed_size = LZ4_compressBound(codec.block_size) + CINT_SIZE
-
-    return compressed_size * num_blocks
+    max_compressed_size(length(input), codec.block_size)
 end
 
 """
-   TranscodingStreams.minoutsize(codec::LZ4FastCompressor, input::Memory)
+   TranscodingStreams.minoutsize(codec::Union{LZ4FastCompressor, LZ4HCCompressor}, input::Memory)
 
 Returns the minimum output size of `process`.
 """
@@ -99,7 +106,7 @@ Finalizes the LZ4 Compression Codec.
 """
 function TranscodingStreams.finalize(codec::LZ4FastCompressor)::Nothing
     LZ4_freeStream(codec.streamptr)
-    codec.streamptr = Ptr{LZ4_stream_t}(C_NULL)
+    codec.streamptr = C_NULL
     nothing
 end
 
@@ -139,49 +146,38 @@ function TranscodingStreams.process(
     error::Error
 )::Tuple{Int,Int,Symbol}
 
+    input.size == 0 && return (0, 0, :end)
     try
-        if input.size == 0
-            (0, 0, :end)
-        else
-            in_buffer = pointer(codec.buffer[codec.curr_buffer + 1, :])
+        in_buffer = pointer(get_buffer!(codec.buffer))
 
-            data_size = min(input.size, codec.block_size)
-            out_buffer = Vector{UInt8}(undef, LZ4_compressBound(data_size))
-            unsafe_copyto!(in_buffer, input.ptr, data_size)
+        data_size = min(input.size, codec.block_size)
+        out_buffer = Vector{UInt8}(undef, LZ4_compressBound(data_size))
+        unsafe_copyto!(in_buffer, input.ptr, data_size)
 
-            compressed_size = LZ4_compress_fast_continue(
-                codec.streamptr,
-                in_buffer,
-                pointer(out_buffer),
-                data_size,
-                length(out_buffer),
-                codec.acceleration,
-            )
+        compressed_size = LZ4_compress_fast_continue(
+            codec.streamptr,
+            in_buffer,
+            pointer(out_buffer),
+            data_size,
+            length(out_buffer),
+            codec.acceleration,
+        )
 
-            # Update double buffer index
-            codec.curr_buffer = !codec.curr_buffer
+        checkbounds(output, compressed_size + CINT_SIZE)
+        writeint(output, compressed_size)
+        unsafe_copyto!(output.ptr + CINT_SIZE, pointer(out_buffer), compressed_size)
 
-            if output.size < compressed_size + CINT_SIZE
-                throw(LZ4Exception("LZ4FastCompressor", "Improperly sized `output`"))
-            end
-            writeint(output, compressed_size)
-            unsafe_copyto!(output.ptr + CINT_SIZE, pointer(out_buffer), compressed_size)
-
-            (data_size, compressed_size + CINT_SIZE, :ok)
-        end
+        return (data_size, compressed_size + CINT_SIZE, :ok)
     catch err
         error[] = err
-        (0, 0, :error)
+        return (0, 0, :error)
     end
 end
 
 mutable struct LZ4SafeDecompressor <: TranscodingStreams.Codec
     streamptr::Ptr{LZ4_streamDecode_t}
     block_size::Int
-
-    # Double buffering
-    buffer::Array{UInt8,2}
-    curr_buffer::Bool
+    buffer::SimpleDoubleBuffer
 end
 
 """
@@ -194,12 +190,7 @@ Creates an LZ4 compression codec.
     Must match or exceed the compression `block_size` or decompression will fail.
 """
 function LZ4SafeDecompressor(; block_size::Integer=1024)
-    return LZ4SafeDecompressor(
-        Ptr{LZ4_streamDecode_t}(C_NULL),
-        block_size,
-        Array{UInt8}(undef, 2, block_size),
-        false,
-    )
+    return LZ4SafeDecompressor(C_NULL, block_size, SimpleDoubleBuffer(block_size))
 end
 
 const LZ4SafeDecompressorStream{S} = TranscodingStream{LZ4SafeDecompressor,S} where S<:IO
@@ -249,7 +240,7 @@ Finalizes the LZ4F Compression Codec.
 """
 function TranscodingStreams.finalize(codec::LZ4SafeDecompressor)::Nothing
     LZ4_freeStreamDecode(codec.streamptr)
-    codec.streamptr = Ptr{LZ4_streamDecode_t}(C_NULL)
+    codec.streamptr = C_NULL
     nothing
 end
 
@@ -288,39 +279,26 @@ function TranscodingStreams.process(
     error::Error
 )::Tuple{Int,Int,Symbol}
 
+    input.size == 0 && return (0, 0, :end)
     try
-        if input.size == 0
-            (0, 0, :end)
-        else
-            if input.size < CINT_SIZE
-                throw(LZ4Exception("LZ4SafeDecompressor", "Improperly formatted input"))
-            end
-            data_size = readint(input)
+        out_buffer = get_buffer!(codec.buffer)
+        data_size = readint(input)
 
-            # Get buffer from double buffer
-            out_buffer = codec.buffer[codec.curr_buffer+1, :]
+        decompressed_size = LZ4_decompress_safe_continue(
+            codec.streamptr,
+            input.ptr+CINT_SIZE,
+            pointer(out_buffer),
+            data_size,
+            length(out_buffer)
+        )
 
-            decompressed_size = LZ4_decompress_safe_continue(
-                codec.streamptr,
-                input.ptr+CINT_SIZE,
-                pointer(out_buffer),
-                data_size,
-                length(out_buffer)
-            )
+        checkbounds(output, decompressed_size)
+        unsafe_copyto!(output.ptr, pointer(out_buffer), decompressed_size)
 
-            # Update double buffer index
-            codec.curr_buffer = !codec.curr_buffer
-
-            if output.size < decompressed_size
-                throw(LZ4Exception("LZ4SafeDecompressor", "Improperly sized `output`"))
-            end
-            unsafe_copyto!(output.ptr, pointer(out_buffer), decompressed_size)
-
-            (data_size + CINT_SIZE, decompressed_size, :ok)
-        end
+        return (data_size + CINT_SIZE, decompressed_size, :ok)
     catch err
         error[] = err
-        (0, 0, :error)
+        return (0, 0, :error)
     end
 end
 
