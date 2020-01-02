@@ -12,7 +12,6 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
 """
 
 @testset "Transcoding" begin
-
     @test LZ4FrameCompressorStream <: TranscodingStream
     @test LZ4FrameDecompressorStream <: TranscodingStream
 
@@ -79,7 +78,6 @@ end
     codec = LZ4FrameDecompressor()
     @test_throws CodecLz4.LZ4Exception transcode(codec, "not properly formatted")
     @test_nowarn TranscodingStreams.finalize(codec)
-
 end
 
 @testset "keywords" begin
@@ -106,7 +104,6 @@ end
     @test frame.frameType == Cuint(1)
     @test frame.contentSize == Culonglong(100)
     @test frame.blockChecksumFlag == Cuint(1)
-
 end
 
 @testset "dst size fix" begin

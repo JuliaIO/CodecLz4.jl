@@ -9,7 +9,6 @@
     """
 
     @testset "Transcoding" begin
-
         @test LZ4HCCompressorStream <: TranscodingStream
 
         compressed = transcode(LZ4HCCompressor, text)

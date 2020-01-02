@@ -36,7 +36,7 @@
         end
     end
 
-    @testset "uninitialized" begin
+    @testset "errors" begin
         stream = Ref{Ptr{CodecLz4.LZ4_streamHC_t}}(C_NULL)
 
         @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4_resetStreamHC(stream[])

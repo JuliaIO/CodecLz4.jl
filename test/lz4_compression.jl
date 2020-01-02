@@ -9,7 +9,6 @@
     """
 
     @testset "Transcoding" begin
-
         @test LZ4FastCompressorStream <: TranscodingStream
         @test LZ4SafeDecompressorStream <: TranscodingStream
 
@@ -55,79 +54,83 @@
         @test read(stream) == teststring
         close(stream)
         close(file)
-
     end
 
     @testset "Errors" begin
-        # Malformed decompression input
-        @test_throws CodecLz4.LZ4Exception transcode(LZ4SafeDecompressor, text)
-        @test_throws BoundsError transcode(LZ4SafeDecompressor, [0x00])
+        @testset "Uninitialized" begin
+            input = Memory(Vector{UInt8}(text))
+            output = Memory(Vector{UInt8}(undef, 1280))
+            not_initialized = LZ4FastCompressor()
+            @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
+            @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0, 0, :error)
 
-        # Properly compressed but not formatted as a stream
-        compressed = lz4_compress(text)
-        @test_throws CodecLz4.LZ4Exception transcode(LZ4SafeDecompressor, text)
-
-        # Uninitialized
-        input = Memory(Vector{UInt8}(text))
-        output = Memory(Vector{UInt8}(undef, 1280))
-        not_initialized = LZ4FastCompressor()
-        @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
-        @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0, 0, :error)
-
-        compressed = Memory(transcode(LZ4FastCompressor, text))
-        not_initialized = LZ4SafeDecompressor()
-        @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
-        @test TranscodingStreams.process(not_initialized, compressed, output, Error()) == (0, 0, :error)
-
-
-        # Compression into too-small buffer
-        output = Memory(Vector{UInt8}(undef, 1))
-        compressor = LZ4FastCompressor()
-
-        try
-            @test_nowarn TranscodingStreams.initialize(compressor)
-            @test TranscodingStreams.startproc(compressor, :read, Error()) == :ok
-            err = Error()
-            @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
-
-            @test err[] isa BoundsError
-        finally
-            TranscodingStreams.finalize(compressor)
+            compressed = Memory(transcode(LZ4FastCompressor, text))
+            not_initialized = LZ4SafeDecompressor()
+            @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
+            @test TranscodingStreams.process(not_initialized, compressed, output, Error()) == (0, 0, :error)
         end
 
-        # Decompression into too-small buffer
-        output = Memory(Vector{UInt8}(undef, 1))
-        compressed = transcode(LZ4FastCompressor, text)
-        decompressor = LZ4SafeDecompressor()
-        try
-            @test_nowarn TranscodingStreams.initialize(decompressor)
-            @test TranscodingStreams.startproc(decompressor, :read, Error()) == :ok
-            err = Error()
-            @test TranscodingStreams.process(decompressor, Memory(compressed), output, err) == (0, 0, :error)
+        @testset "Bad Input" begin
+            # Malformed decompression input
+            @test_throws CodecLz4.LZ4Exception transcode(LZ4SafeDecompressor, text)
+            @test_throws BoundsError transcode(LZ4SafeDecompressor, [0x00])
 
-            @test err[] isa BoundsError
-        finally
-            TranscodingStreams.finalize(decompressor)
+            # Properly compressed but not formatted as a stream
+            compressed = lz4_compress(text)
+            @test_throws CodecLz4.LZ4Exception transcode(LZ4SafeDecompressor, text)
+
+            # Block size too large
+            @test_throws ArgumentError LZ4FastCompressor(; block_size = CodecLz4.LZ4_MAX_INPUT_SIZE + 1)
         end
 
-        # Decompression with too-small block_size
-        output = Memory(Vector{UInt8}(undef, 1))
-        compressed = transcode(LZ4FastCompressor, text)
-        decompressor = LZ4SafeDecompressor(; block_size = 200)
-        try
-            @test_nowarn TranscodingStreams.initialize(decompressor)
-            @test TranscodingStreams.startproc(decompressor, :read, Error()) == :ok
-            err = Error()
-            @test TranscodingStreams.process(decompressor, Memory(compressed), output, err) == (0, 0, :error)
+        @testset "Bad Buffer Size" begin
+            # Decompression with too-small block_size
+            output = Memory(Vector{UInt8}(undef, 1024))
+            compressed = transcode(LZ4FastCompressor, text)
+            decompressor = LZ4SafeDecompressor(; block_size = 200)
+            try
+                @test_nowarn TranscodingStreams.initialize(decompressor)
+                @test TranscodingStreams.startproc(decompressor, :read, Error()) == :ok
+                err = Error()
+                @test TranscodingStreams.process(decompressor, Memory(compressed), output, err) == (0, 0, :error)
 
-            @test err[] isa CodecLz4.LZ4Exception
-            @test err[].msg == "Decompression failed."
-        finally
-            TranscodingStreams.finalize(decompressor)
+                @test err[] isa CodecLz4.LZ4Exception
+                @test err[].msg == "Decompression failed."
+            finally
+                TranscodingStreams.finalize(decompressor)
+            end
+
+            # Compression into too-small buffer
+            input = Memory(Vector{UInt8}(text))
+            output = Memory(Vector{UInt8}(undef, 1))
+            compressor = LZ4FastCompressor()
+
+            try
+                @test_nowarn TranscodingStreams.initialize(compressor)
+                @test TranscodingStreams.startproc(compressor, :read, Error()) == :ok
+                err = Error()
+                @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
+
+                @test err[] isa BoundsError
+            finally
+                TranscodingStreams.finalize(compressor)
+            end
+
+            # Decompression into too-small buffer
+            output = Memory(Vector{UInt8}(undef, 1))
+            compressed = transcode(LZ4FastCompressor, text)
+            decompressor = LZ4SafeDecompressor()
+            try
+                @test_nowarn TranscodingStreams.initialize(decompressor)
+                @test TranscodingStreams.startproc(decompressor, :read, Error()) == :ok
+                err = Error()
+                @test TranscodingStreams.process(decompressor, Memory(compressed), output, err) == (0, 0, :error)
+
+                @test err[] isa BoundsError
+            finally
+                TranscodingStreams.finalize(decompressor)
+            end
         end
-
-        # Block size too large
-        @test_throws ArgumentError LZ4FastCompressor(; block_size = CodecLz4.LZ4_MAX_INPUT_SIZE + 1)
     end
 
     @testset "dst size fix" begin
@@ -145,5 +148,4 @@
         @test_nowarn close(stream)
         close(io)
     end
-
 end
