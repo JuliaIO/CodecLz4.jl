@@ -1,6 +1,6 @@
 mutable struct SimpleRingBuffer
     buffer::Vector{UInt8}
-    offset::Integer
+    offset::Int
 end
 
 SimpleRingBuffer(buf_size::Integer) = SimpleRingBuffer(Vector{UInt8}(undef, buf_size), 0)

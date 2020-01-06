@@ -214,8 +214,3 @@ function TranscodingStreams.process(codec::LZ4FrameDecompressor, input::Memory, 
     end
 
 end
-
-Base.@deprecate_binding LZ4Compressor LZ4FrameCompressor
-Base.@deprecate_binding LZ4Decompressor LZ4FrameDecompressor
-Base.@deprecate_binding LZ4CompressorStream LZ4FrameCompressorStream
-Base.@deprecate_binding LZ4DecompressorStream LZ4FrameDecompressorStream

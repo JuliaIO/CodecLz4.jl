@@ -214,7 +214,7 @@ Special : if application sets a ring buffer for decompression, it must respect o
   In which case, encoding and decoding buffers do not need to be synchronized,
   and encoding ring buffer can have any size, including larger than decoding buffer.
 Whenever these conditions are not possible, save the last 64KB of decoded data into a safe buffer,
-and indicate where it is saved using LZ4_setStreamDecode() before decompressing next block.
+and indicate where it is saved using `LZ4_setStreamDecode()` before decompressing next block.
 """
 function LZ4_decompress_safe_continue(streamptr::Ptr{LZ4_streamDecode_t}, src, dst, srcsize, dstcapacity)
     check_initialized(streamptr)
