@@ -1,7 +1,7 @@
 @testset "lz4frame" begin
-     testIn = "Far out in the uncharted backwaters of the unfashionable end of the west-
+     test_in = "Far out in the uncharted backwaters of the unfashionable end of the west-
  ern  spiral  arm  of  the  Galaxy  lies  a  small  unregarded  yellow  sun."
-    test_size = convert(UInt, length(testIn))
+    test_size = convert(UInt, length(test_in))
     version = CodecLz4.LZ4F_getVersion()
 
     @testset "Errors" begin
@@ -15,7 +15,6 @@
     end
 
     @testset "keywords" begin
-
         frame = CodecLz4.LZ4F_frameInfo_t()
         @test frame.blockSizeID == Cuint(default_size)
         @test frame.blockMode == Cuint(block_linked)
@@ -113,7 +112,7 @@
             @test_nowarn result = CodecLz4.LZ4F_decompress(dctx[], decbuffer, dstsize, pointer(buffer) + offset, srcsize, C_NULL)
             @test srcsize[] > 0
 
-            @test testIn == unsafe_string(pointer(decbuffer), dstsize[])
+            @test test_in == unsafe_string(pointer(decbuffer), dstsize[])
 
             result = CodecLz4.LZ4F_freeDecompressionContext(dctx[])
             @test !CodecLz4.LZ4F_isError(result)
@@ -162,7 +161,7 @@
         @test_nowarn result = CodecLz4.LZ4F_compressBegin(ctx[], buffer, bufsize, prefs)
 
         offset = result
-        @test_nowarn result = CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer) + offset, bufsize - offset, pointer(testIn), test_size, C_NULL)
+        @test_nowarn result = CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer) + offset, bufsize - offset, pointer(test_in), test_size, C_NULL)
 
         offset += result
         @test_nowarn result = CodecLz4.LZ4F_flush(ctx[], pointer(buffer)+offset, bufsize - offset, C_NULL)
@@ -189,7 +188,7 @@
         buffer = Vector{UInt8}(undef, test_size)
 
         @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_compressBegin(ctx[], buffer, bufsize, prefs)
-        @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer), bufsize, pointer(testIn), test_size, C_NULL)
+        @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer), bufsize, pointer(test_in), test_size, C_NULL)
         @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_flush(ctx[], pointer(buffer), bufsize, C_NULL)
         @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_compressEnd(ctx[], pointer(buffer), bufsize, C_NULL)
     end
@@ -207,7 +206,7 @@
         buffer = Vector{UInt8}(undef, ceil(Int, bound / 8))
 
         @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_compressBegin(ctx[], buffer, UInt(2), prefs)
-        @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer), bufsize, pointer(testIn), test_size, C_NULL)
+        @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer), bufsize, pointer(test_in), test_size, C_NULL)
 
         result = CodecLz4.LZ4F_freeCompressionContext(ctx[])
         @test !CodecLz4.LZ4F_isError(result)
@@ -219,7 +218,7 @@
         @test_nowarn result = CodecLz4.LZ4F_compressBegin(ctx[], buffer, bufsize, prefs)
 
         offset = result
-        @test_nowarn result = CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer) + offset, bufsize - offset, pointer(testIn), test_size, C_NULL)
+        @test_nowarn result = CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer) + offset, bufsize - offset, pointer(test_in), test_size, C_NULL)
 
         @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_flush(ctx[], pointer(buffer), UInt(2), C_NULL)
         @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_compressEnd(ctx[], pointer(buffer), UInt(2), C_NULL)
@@ -235,8 +234,8 @@
         decbuffer = Vector{UInt8}(undef, 1280)
 
         frameinfo = Ref(CodecLz4.LZ4F_frameInfo_t())
-        @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_getFrameInfo(dctx[], frameinfo, pointer(testIn), srcsize)
-        @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_decompress(dctx[], decbuffer, dstsize, pointer(testIn), srcsize, C_NULL)
+        @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_getFrameInfo(dctx[], frameinfo, pointer(test_in), srcsize)
+        @test_throws CodecLz4.LZ4Exception CodecLz4.LZ4F_decompress(dctx[], decbuffer, dstsize, pointer(test_in), srcsize, C_NULL)
     end
 
     @testset "Preferences" begin
@@ -255,7 +254,7 @@
         @test_nowarn result = CodecLz4.LZ4F_compressBegin(ctx[], buffer, bufsize, prefs)
 
         offset = result
-        @test_nowarn result = CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer) + offset, bufsize - offset, pointer(testIn), test_size, opts)
+        @test_nowarn result = CodecLz4.LZ4F_compressUpdate(ctx[], pointer(buffer) + offset, bufsize - offset, pointer(test_in), test_size, opts)
 
         offset += result
         @test_nowarn result = CodecLz4.LZ4F_flush(ctx[], pointer(buffer) + offset, bufsize - offset, opts)
@@ -273,5 +272,3 @@
     end
 
 end
-
-

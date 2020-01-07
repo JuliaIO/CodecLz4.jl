@@ -12,23 +12,21 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
 """
 
 @testset "Transcoding" begin
+    @test LZ4FrameCompressorStream <: TranscodingStream
+    @test LZ4FrameDecompressorStream <: TranscodingStream
 
-    @test LZ4CompressorStream <: TranscodingStream
-    @test LZ4DecompressorStream <: TranscodingStream
-
-    # Change back to `transcode(LZ4Compressor, text)` once bicycle1885/TranscodingStreams.jl#39 is fixed
-    compressed = transcode(LZ4Compressor, Vector{UInt8}(text))
+    compressed = transcode(LZ4FrameCompressor, text)
     @test sizeof(compressed) < sizeof(text)
 
-    decompressed = transcode(LZ4Decompressor, compressed)
+    decompressed = transcode(LZ4FrameDecompressor, compressed)
     @test sizeof(decompressed) > sizeof(compressed)
     @test decompressed == Vector{UInt8}(text)
 
-    test_roundtrip_fileio(LZ4Compressor, LZ4Decompressor)
-    test_roundtrip_transcode(LZ4Compressor, LZ4Decompressor)
+    test_roundtrip_fileio(LZ4FrameCompressor, LZ4FrameDecompressor)
+    test_roundtrip_transcode(LZ4FrameCompressor, LZ4FrameDecompressor)
 
     file = IOBuffer(text)
-    stream = LZ4DecompressorStream(LZ4CompressorStream(file))
+    stream = LZ4FrameDecompressorStream(LZ4FrameCompressorStream(file))
     flush(stream)
 
     @test hash(read(stream)) == hash(text)
@@ -36,7 +34,7 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     close(file)
 
     file = IOBuffer(text)
-    stream = LZ4DecompressorStream(LZ4CompressorStream(file; blocksizeid = max64KB))
+    stream = LZ4FrameDecompressorStream(LZ4FrameCompressorStream(file; blocksizeid = max64KB))
     flush(stream)
 
     @test hash(read(stream)) == hash(text)
@@ -45,7 +43,7 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
 
 
     file = IOBuffer("")
-    stream = LZ4DecompressorStream(LZ4CompressorStream(file))
+    stream = LZ4FrameDecompressorStream(LZ4FrameCompressorStream(file))
     flush(stream)
 
     @test hash(read(stream)) == hash(b"")
@@ -56,20 +54,20 @@ end
 @testset "Errors" begin
     input = Memory(Vector{UInt8}(text))
     output = Memory(Vector{UInt8}(undef, 1280))
-    not_initialized = LZ4Compressor()
+    not_initialized = LZ4FrameCompressor()
     @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
     @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0, 0, :error)
 
-    compressed = transcode(LZ4Compressor, Vector{UInt8}(text))
+    compressed = transcode(LZ4FrameCompressor, Vector{UInt8}(text))
     corrupted = copy(compressed)
     corrupted[1] = 0x00
     file = IOBuffer(corrupted)
-    stream = LZ4DecompressorStream(file)
+    stream = LZ4FrameDecompressorStream(file)
     @test_throws CodecLz4.LZ4Exception read(stream)
     @test_throws ArgumentError read(stream)
 
     output = Memory(Vector{UInt8}(undef, 1))
-    compressor = LZ4Compressor()
+    compressor = LZ4FrameCompressor()
     @test_nowarn TranscodingStreams.initialize(compressor)
     @test TranscodingStreams.startproc(compressor, :read, Error()) == :ok
     err = Error()
@@ -77,14 +75,13 @@ end
     @test err[].msg == "Output buffer too small for header."
     @test_nowarn TranscodingStreams.finalize(compressor)
 
-    codec = LZ4Decompressor()
+    codec = LZ4FrameDecompressor()
     @test_throws CodecLz4.LZ4Exception transcode(codec, "not properly formatted")
     @test_nowarn TranscodingStreams.finalize(codec)
-
 end
 
 @testset "keywords" begin
-    compressor = LZ4Compressor(
+    compressor = LZ4FrameCompressor(
         blocksizeid = max64KB,
         blockmode = block_independent,
         contentchecksum = true,
@@ -107,21 +104,34 @@ end
     @test frame.frameType == Cuint(1)
     @test frame.contentSize == Culonglong(100)
     @test frame.blockChecksumFlag == Cuint(1)
-
 end
 
 @testset "dst size fix" begin
     teststring = rand(UInt8, 800000)
     io = IOBuffer(teststring)
-    stream = LZ4CompressorStream(io)
+    stream = LZ4FrameCompressorStream(io)
     result = read(stream)
     @test_nowarn close(stream)
     close(io)
 
     io = IOBuffer(result)
-    stream = LZ4DecompressorStream(io)
+    stream = LZ4FrameDecompressorStream(io)
     result = read(stream)
     @test result == teststring
     @test_nowarn close(stream)
     close(io)
+end
+
+@testset "deprecated" begin
+    compressed = transcode(LZ4FrameCompressor, text)
+    decompressed = transcode(LZ4FrameDecompressor, compressed)
+    @test decompressed == text
+
+    file = IOBuffer("")
+    stream = LZ4DecompressorStream(LZ4CompressorStream(file))
+    flush(stream)
+
+    @test read(stream) == b""
+    close(stream)
+    close(file)
 end

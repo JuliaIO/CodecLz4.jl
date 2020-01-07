@@ -3,7 +3,7 @@ using TranscodingStreams: splitkwargs
 const BUF_SIZE = 16*1024
 const LZ4_FOOTER_SIZE = 4
 
-mutable struct LZ4Compressor <: TranscodingStreams.Codec
+mutable struct LZ4FrameCompressor <: TranscodingStreams.Codec
     ctx::Ref{Ptr{LZ4F_cctx}}
     prefs::Ref{LZ4F_preferences_t}
     header::Memory
@@ -11,7 +11,7 @@ mutable struct LZ4Compressor <: TranscodingStreams.Codec
 end
 
 """
-    LZ4Compressor(; kwargs...)
+    LZ4FrameCompressor(; kwargs...)
 
 Creates an LZ4 compression codec.
 
@@ -27,71 +27,71 @@ Creates an LZ4 compression codec.
 - `compressionlevel::Integer=0`: compression level (-1..12)
 - `autoflush::Bool=false`: always flush if `true`
 """
-function LZ4Compressor(; kwargs...)
+function LZ4FrameCompressor(; kwargs...)
     x, y = splitkwargs(kwargs, (:compressionlevel, :autoflush))
     ctx = Ref{Ptr{LZ4F_cctx}}(C_NULL)
     frame = LZ4F_frameInfo_t(; y...)
     prefs = Ref(LZ4F_preferences_t(frame; x...))
-    return LZ4Compressor(ctx, prefs, Memory(Vector{UInt8}(undef, LZ4F_HEADER_SIZE_MAX)), false)
+    return LZ4FrameCompressor(ctx, prefs, Memory(Vector{UInt8}(undef, LZ4F_HEADER_SIZE_MAX)), false)
 end
 
-const LZ4CompressorStream{S} = TranscodingStream{LZ4Compressor,S} where S<:IO
+const LZ4FrameCompressorStream{S} = TranscodingStream{LZ4FrameCompressor,S} where S<:IO
 
 """
-    LZ4CompressorStream(stream::IO; kwargs...)
+    LZ4FrameCompressorStream(stream::IO; kwargs...)
 
-Creates an LZ4 compression stream. See `LZ4Compressor()` and `TranscodingStream()` for arguments.
+Creates an LZ4 compression stream. See `LZ4FrameCompressor()` and `TranscodingStream()` for arguments.
 """
-function LZ4CompressorStream(stream::IO; kwargs...)
+function LZ4FrameCompressorStream(stream::IO; kwargs...)
     x, y = splitkwargs(kwargs, (:blocksizeid, :blockmode, :contentchecksum, :blockchecksum, :frametype, :contentsize, :compressionlevel, :autoflush))
-    return TranscodingStream(LZ4Compressor(; x...), stream; y...)
+    return TranscodingStream(LZ4FrameCompressor(; x...), stream; y...)
 end
 
 """
-    TranscodingStreams.expectedsize(codec::LZ4Compressor, input::Memory)
+    TranscodingStreams.expectedsize(codec::LZ4FrameCompressor, input::Memory)
 
 Returns the expected size of the transcoded data.
 """
-function TranscodingStreams.expectedsize(codec::LZ4Compressor, input::Memory)::Int
+function TranscodingStreams.expectedsize(codec::LZ4FrameCompressor, input::Memory)::Int
     LZ4F_compressBound(input.size, codec.prefs) + LZ4F_HEADER_SIZE_MAX + LZ4_FOOTER_SIZE
 end
 
 """
-   TranscodingStreams.minoutsize(codec::LZ4Compressor, input::Memory) 
+   TranscodingStreams.minoutsize(codec::LZ4FrameCompressor, input::Memory)
 
 Returns the minimum output size of `process`.
 """
-function TranscodingStreams.minoutsize(codec::LZ4Compressor, input::Memory)::Int
+function TranscodingStreams.minoutsize(codec::LZ4FrameCompressor, input::Memory)::Int
     LZ4F_compressBound(input.size, codec.prefs)
 end
 
 """
-   TranscodingStreams.initialize(codec::LZ4Compressor) 
+   TranscodingStreams.initialize(codec::LZ4FrameCompressor)
 
 Initializes the LZ4F Compression Codec.
 """
-function TranscodingStreams.initialize(codec::LZ4Compressor)::Nothing
+function TranscodingStreams.initialize(codec::LZ4FrameCompressor)::Nothing
     LZ4F_createCompressionContext(codec.ctx, LZ4F_getVersion())
     nothing
 end
 
 """
-    TranscodingStreams.finalize(codec::LZ4Compressor)
+    TranscodingStreams.finalize(codec::LZ4FrameCompressor)
 
 Finalizes the LZ4F Compression Codec.
 """
-function TranscodingStreams.finalize(codec::LZ4Compressor)::Nothing
+function TranscodingStreams.finalize(codec::LZ4FrameCompressor)::Nothing
     LZ4F_freeCompressionContext(codec.ctx[])
     nothing
 end
 
 """
-    TranscodingStreams.startproc(codec::LZ4Compressor, mode::Symbol, error::Error)
+    TranscodingStreams.startproc(codec::LZ4FrameCompressor, mode::Symbol, error::Error)
 
 Starts processing with the codec
 Creates the LZ4F header to be written to the output.
 """
-function TranscodingStreams.startproc(codec::LZ4Compressor, mode::Symbol, error::Error)::Symbol
+function TranscodingStreams.startproc(codec::LZ4FrameCompressor, mode::Symbol, error::Error)::Symbol
     try
         header = Vector{UInt8}(undef, LZ4F_HEADER_SIZE_MAX)
         headerSize = LZ4F_compressBegin(codec.ctx[], header, convert(Csize_t, LZ4F_HEADER_SIZE_MAX), codec.prefs)
@@ -105,13 +105,13 @@ function TranscodingStreams.startproc(codec::LZ4Compressor, mode::Symbol, error:
 end
 
 """
-    TranscodingStreams.process(codec::LZ4Compressor, input::Memory, output::Memory, error::Error)
+    TranscodingStreams.process(codec::LZ4FrameCompressor, input::Memory, output::Memory, error::Error)
 
 Compresses the data from `input` and writes to `output`.
 The LZ4 compression algorithm may simply buffer the input data a full frame can be produced, so `data_written` may be 0.
 `flush()` may be used to force `output` to be written.
 """
-function TranscodingStreams.process(codec::LZ4Compressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
+function TranscodingStreams.process(codec::LZ4FrameCompressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
     data_read = 0
     data_written = 0
     if codec.write_header
@@ -140,58 +140,58 @@ function TranscodingStreams.process(codec::LZ4Compressor, input::Memory, output:
 
 end
 
-struct LZ4Decompressor <: TranscodingStreams.Codec
+struct LZ4FrameDecompressor <: TranscodingStreams.Codec
     dctx::Ref{Ptr{LZ4F_dctx}}
 end
 
 """
-    LZ4Compressor()
+    LZ4FrameCompressor()
 
 Creates an LZ4 decompression codec.
 """
-function LZ4Decompressor()
+function LZ4FrameDecompressor()
     dctx = Ref{Ptr{LZ4F_dctx}}(C_NULL)
-    return LZ4Decompressor(dctx)
+    return LZ4FrameDecompressor(dctx)
 end
 
-const LZ4DecompressorStream{S} = TranscodingStream{LZ4Decompressor,S} where S<:IO
+const LZ4FrameDecompressorStream{S} = TranscodingStream{LZ4FrameDecompressor,S} where S<:IO
 
 """
-    LZ4CompressorStream(stream::IO; kwargs...)
+    LZ4FrameCompressorStream(stream::IO; kwargs...)
 
 Creates an LZ4 decompression stream. See `TranscodingStream()` for arguments.
 """
-function LZ4DecompressorStream(stream::IO; kwargs...)
-    return TranscodingStream(LZ4Decompressor(), stream; kwargs...)
+function LZ4FrameDecompressorStream(stream::IO; kwargs...)
+    return TranscodingStream(LZ4FrameDecompressor(), stream; kwargs...)
 end
 
 """
-    TranscodingStreams.initialize(codec::LZ4Decompressor)
+    TranscodingStreams.initialize(codec::LZ4FrameDecompressor)
 
 Initializes the LZ4F Decompression Codec.
 """
-function TranscodingStreams.initialize(codec::LZ4Decompressor)::Nothing
+function TranscodingStreams.initialize(codec::LZ4FrameDecompressor)::Nothing
     LZ4F_createDecompressionContext(codec.dctx, LZ4F_getVersion())
     nothing
 end
 
 """
-    TranscodingStreams.finalize(codec::LZ4Decompressor)
+    TranscodingStreams.finalize(codec::LZ4FrameDecompressor)
 
 Finalizes the LZ4F Decompression Codec.
 """
-function TranscodingStreams.finalize(codec::LZ4Decompressor)::Nothing
+function TranscodingStreams.finalize(codec::LZ4FrameDecompressor)::Nothing
     LZ4F_freeDecompressionContext(codec.dctx[])
     nothing
 end
 
 """
-    TranscodingStreams.process(codec::LZ4Decompressor, input::Memory, output::Memory, error::Error)
+    TranscodingStreams.process(codec::LZ4FrameDecompressor, input::Memory, output::Memory, error::Error)
 
 Decompresses the data from `input` and writes to `output`.
 If the input data is not properly formatted this function will throw an error.
 """
-function TranscodingStreams.process(codec::LZ4Decompressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
+function TranscodingStreams.process(codec::LZ4FrameDecompressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
     data_read = 0
     data_written = 0
 
@@ -214,4 +214,3 @@ function TranscodingStreams.process(codec::LZ4Decompressor, input::Memory, outpu
     end
 
 end
-
