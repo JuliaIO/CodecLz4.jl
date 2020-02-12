@@ -121,17 +121,3 @@ end
     @test_nowarn close(stream)
     close(io)
 end
-
-@testset "deprecated" begin
-    compressed = transcode(LZ4FrameCompressor, text)
-    decompressed = transcode(LZ4FrameDecompressor, compressed)
-    @test decompressed == text
-
-    file = IOBuffer("")
-    stream = LZ4DecompressorStream(LZ4CompressorStream(file))
-    flush(stream)
-
-    @test read(stream) == b""
-    close(stream)
-    close(file)
-end

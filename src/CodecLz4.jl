@@ -37,6 +37,4 @@ include("hc_compression.jl")
 include("lz4_compression.jl")
 include("simple_compression.jl")
 
-include("deprecated.jl")
-
 end
