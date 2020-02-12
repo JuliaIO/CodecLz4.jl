@@ -1,7 +1,9 @@
 __precompile__()
 module CodecLz4
-using TranscodingStreams: TranscodingStream, Memory, Error
+
 using TranscodingStreams
+using TranscodingStreams: TranscodingStream, Memory, Error
+
 export LZ4FrameCompressor, LZ4FrameCompressorStream,
     LZ4FrameDecompressor, LZ4FrameDecompressorStream,
     LZ4FastCompressor, LZ4FastCompressorStream,
