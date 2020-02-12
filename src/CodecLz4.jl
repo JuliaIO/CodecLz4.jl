@@ -1,6 +1,7 @@
 __precompile__()
 module CodecLz4
 
+using Lz4_jll: liblz4
 using TranscodingStreams
 using TranscodingStreams: TranscodingStream, Memory, Error
 
@@ -13,14 +14,6 @@ export LZ4FrameCompressor, LZ4FrameCompressorStream,
     BlockMode, block_linked, block_independent,
     FrameType, normal_frame, skippable_frame,
     lz4_compress, lz4_hc_compress, lz4_decompress
-
-
-depsjl = joinpath(@__DIR__, "..", "deps", "deps.jl")
-if isfile(depsjl)
-    include(depsjl)
-else
-    error("CodecLz4 not properly installed. Please run Pkg.build(\"CodecLz4\") and restart julia")
-end
 
 struct LZ4Exception <: Exception
     src::AbstractString
