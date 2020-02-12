@@ -49,4 +49,4 @@ compressed = transcode(LZ4FrameCompressor, text)
 @assert sizeof(compressed) < sizeof(text)
 @assert transcode(LZ4FrameDecompressor, compressed) == Vector{UInt8}(text)
 ```
-The API is heavily based off of [CodecZLib](https://github.com/bicycle1885/CodecZlib.jl), and uses [TranscodingStreams.jl](https://github.com/bicycle1885/TranscodingStreams.jl). See those for details.
+The API is heavily based off of [CodecZLib](https://github.com/JuliaIO/CodecZlib.jl), and uses [TranscodingStreams.jl](https://github.com/JuliaIO/TranscodingStreams.jl). See those for details.
