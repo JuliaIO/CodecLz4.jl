@@ -2,7 +2,7 @@
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://invenia.github.io/CodecLz4.jl/stable)
 [![Latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://invenia.github.io/CodecLz4.jl/latest)
-[![Build Status](https://travis-ci.org/invenia/CodecLz4.jl.svg?branch=master)](https://travis-ci.org/invenia/CodecLz4.jl)
+[![Build Status](https://travis-ci.com/invenia/CodecLz4.jl.svg?branch=master)](https://travis-ci.com/invenia/CodecLz4.jl)
 [![CodeCov](https://codecov.io/gh/invenia/CodecLz4.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/invenia/CodecLz4.jl)
 
 Provides transcoding codecs for compression and decompression with LZ4. Source: [LZ4](https://github.com/lz4/lz4)
@@ -49,4 +49,4 @@ compressed = transcode(LZ4FrameCompressor, text)
 @assert sizeof(compressed) < sizeof(text)
 @assert transcode(LZ4FrameDecompressor, compressed) == Vector{UInt8}(text)
 ```
-The API is heavily based off of [CodecZLib](https://github.com/bicycle1885/CodecZlib.jl), and uses [TranscodingStreams.jl](https://github.com/bicycle1885/TranscodingStreams.jl). See those for details.
+The API is heavily based off of [CodecZLib](https://github.com/JuliaIO/CodecZlib.jl), and uses [TranscodingStreams.jl](https://github.com/JuliaIO/TranscodingStreams.jl). See those for details.
