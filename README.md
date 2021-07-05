@@ -39,7 +39,7 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
 
 # Streaming API.
 stream = LZ4FrameCompressorStream(IOBuffer(text))
-for line in eachline(LZ4DecompressorStream(stream))
+for line in eachline(LZ4FrameDecompressorStream(stream))
 println(line)
 end
 close(stream)
