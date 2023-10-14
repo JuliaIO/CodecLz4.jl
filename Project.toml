@@ -2,7 +2,7 @@ name = "CodecLz4"
 uuid = "5ba52731-8f18-5e0d-9241-30f10d1ec561"
 license = "MIT"
 author = "Invenia Technical Computing"
-version = "0.4.0"
+version = "0.4.1"
 
 [deps]
 Lz4_jll = "5ced341a-0733-55b8-9ab6-a4889d929147"
@@ -10,7 +10,7 @@ TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 
 [compat]
 Lz4_jll = "1.9"
-TranscodingStreams = "0.9"
+TranscodingStreams = "0.9, 0.10"
 julia = "1.3"
 
 [extras]
