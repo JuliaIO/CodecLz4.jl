@@ -46,7 +46,15 @@ This function never writes outside `dst` buffer, nor read outside `source` buffe
 Returns the number of bytes written into buffer `dst` (necessarily <= dstcapacity)
 """
 function LZ4_compress_fast(src, dst, srcsize, dstcapacity, acceleration=1)
-    ret = ccall((:LZ4_compress_fast, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint, Cint), src, dst, srcsize, dstcapacity, acceleration)
+    csrc = Base.cconvert(Ptr{UInt8}, src)
+    cdst = Base.cconvert(Ptr{UInt8}, dst)
+    GC.@preserve csrc cdst begin
+        # Allow Julia to GC while compressing
+        gc_state = @ccall(jl_gc_safe_enter()::Int8)
+        ret = ccall((:LZ4_compress_fast, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint, Cint), Base.unsafe_convert(Ptr{UInt8}, csrc)::Ptr{UInt8}, Base.unsafe_convert(Ptr{UInt8}, cdst)::Ptr{UInt8}, srcsize, dstcapacity, acceleration)
+        # Leave GC-safe region, waiting for GC to complete if it's running
+        @ccall(jl_gc_safe_leave(gc_state::Int8)::Cvoid)
+    end
     check_compression_error(ret, "LZ4_compress_fast")
 end
 
@@ -63,7 +71,16 @@ or fill `dst` buffer completely with as much data as possible from `src`.
 Returns number of bytes written into `dst` (necessarily <= dstcapacity)
 """
 function LZ4_compress_destSize(src, dst, srcsize, dstcapacity)
-    ret = ccall((:LZ4_compress_destSize, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Ptr{Cint}, Cint), src, dst, srcsize, dstcapacity)
+    csrc = Base.cconvert(Ptr{UInt8}, src)
+    cdst = Base.cconvert(Ptr{UInt8}, dst)
+    csrcsize = Base.cconvert(Ptr{Cint}, srcsize)
+    GC.@preserve csrc cdst csrcsize begin
+        # Allow Julia to GC while compressing
+        gc_state = @ccall(jl_gc_safe_enter()::Int8)
+        ret = ccall((:LZ4_compress_destSize, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Ptr{Cint}, Cint), Base.unsafe_convert(Ptr{UInt8}, csrc)::Ptr{UInt8}, Base.unsafe_convert(Ptr{UInt8}, cdst)::Ptr{UInt8}, Base.unsafe_convert(Ptr{Cint}, csrcsize)::Ptr{Cint}, dstcapacity)
+        # Leave GC-safe region, waiting for GC to complete if it's running
+        @ccall(jl_gc_safe_leave(gc_state::Int8)::Cvoid)
+    end
     check_compression_error(ret, "LZ4_compress_destSize")
 end
 
@@ -150,7 +167,15 @@ dstcapacity : is the size of destination buffer, which must be already allocated
 Returns the number of bytes decompressed into destination buffer (necessarily <= dstcapacity)
 """
 function LZ4_decompress_safe(src, dst, cmpsize, dstcapacity)
-    ret = ccall((:LZ4_decompress_safe, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint), src, dst, cmpsize, dstcapacity)
+    csrc = Base.cconvert(Ptr{UInt8}, src)
+    cdst = Base.cconvert(Ptr{UInt8}, dst)
+    GC.@preserve csrc cdst begin
+        # Allow Julia to GC while decompressing
+        gc_state = @ccall(jl_gc_safe_enter()::Int8)
+        ret = ccall((:LZ4_decompress_safe, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint), Base.unsafe_convert(Ptr{UInt8}, csrc)::Ptr{UInt8}, Base.unsafe_convert(Ptr{UInt8}, cdst)::Ptr{UInt8}, cmpsize, dstcapacity)
+        # Leave GC-safe region, waiting for GC to complete if it's running
+        @ccall(jl_gc_safe_leave(gc_state::Int8)::Cvoid)
+    end
     check_decompression_error(ret, "LZ4_decompress_safe")
 end
 
