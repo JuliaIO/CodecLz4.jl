@@ -154,18 +154,20 @@ function TranscodingStreams.process(
         out_buffer = Vector{UInt8}(undef, LZ4_compressBound(data_size))
         unsafe_copyto!(in_buffer, input.ptr, data_size)
 
-        compressed_size = LZ4_compress_fast_continue(
-            codec.streamptr,
-            in_buffer,
-            pointer(out_buffer),
-            data_size,
-            length(out_buffer),
-            codec.acceleration,
-        )
+        GC.@preserve out_buffer begin
+            compressed_size = LZ4_compress_fast_continue(
+                codec.streamptr,
+                in_buffer,
+                pointer(out_buffer),
+                data_size,
+                length(out_buffer),
+                codec.acceleration,
+            )
 
-        checkbounds(output, compressed_size + CINT_SIZE)
-        writeint(output, compressed_size)
-        unsafe_copyto!(output.ptr + CINT_SIZE, pointer(out_buffer), compressed_size)
+            checkbounds(output, compressed_size + CINT_SIZE)
+            writeint(output, compressed_size)
+            unsafe_copyto!(output.ptr + CINT_SIZE, pointer(out_buffer), compressed_size)
+        end
 
         return (data_size, compressed_size + CINT_SIZE, :ok)
     catch err
