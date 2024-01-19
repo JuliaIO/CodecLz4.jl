@@ -1,4 +1,5 @@
 using CodecLz4
+using Random
 using Test
 
 @testset "CodecLz4.jl" begin
