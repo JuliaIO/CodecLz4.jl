@@ -2,7 +2,7 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - master
     tags: ['*']
   pull_request:
     branches:
@@ -21,6 +21,7 @@ jobs:
       matrix:
         version:
           - '1.6'
+          - '1.9'
           - '1'
         os:
           - ubuntu-latest
@@ -34,6 +35,7 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
+          show-versioninfo: true
       - uses: julia-actions/cache@v1
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
