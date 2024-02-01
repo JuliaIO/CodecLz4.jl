@@ -21,9 +21,9 @@ mutable struct SimpleDoubleBuffer
     next::Bool
 end
 
-SimpleDoubleBuffer(buf_size::Integer) = SimpleDoubleBuffer(Array{UInt8}(undef, 2, buf_size), false)
+SimpleDoubleBuffer(buf_size::Integer) = SimpleDoubleBuffer(Array{UInt8}(undef, buf_size, 2), false)
 function get_buffer!(db::SimpleDoubleBuffer)
-    out_buffer = db.buffer[db.next+1, :]
+    out_buffer = @view(db.buffer[:, db.next+1])
     db.next = !db.next  # Update index
     return out_buffer
 end
@@ -148,16 +148,16 @@ function TranscodingStreams.process(
 
     input.size == 0 && return (0, 0, :end)
     try
-        in_buffer = pointer(get_buffer!(codec.buffer))
+        in_buffer = get_buffer!(codec.buffer)
 
         data_size = min(input.size, codec.block_size)
         out_buffer = Vector{UInt8}(undef, LZ4_compressBound(data_size))
-        unsafe_copyto!(in_buffer, input.ptr, data_size)
+        GC.@preserve in_buffer unsafe_copyto!(pointer(in_buffer), input.ptr, data_size)
 
         compressed_size = LZ4_compress_fast_continue(
             codec.streamptr,
             in_buffer,
-            pointer(out_buffer),
+            out_buffer,
             data_size,
             length(out_buffer),
             codec.acceleration,
@@ -165,7 +165,7 @@ function TranscodingStreams.process(
 
         checkbounds(output, compressed_size + CINT_SIZE)
         writeint(output, compressed_size)
-        unsafe_copyto!(output.ptr + CINT_SIZE, pointer(out_buffer), compressed_size)
+        GC.@preserve out_buffer unsafe_copyto!(output.ptr + CINT_SIZE, pointer(out_buffer), compressed_size)
 
         return (data_size, compressed_size + CINT_SIZE, :ok)
     catch err
@@ -287,13 +287,13 @@ function TranscodingStreams.process(
         decompressed_size = LZ4_decompress_safe_continue(
             codec.streamptr,
             input.ptr+CINT_SIZE,
-            pointer(out_buffer),
+            out_buffer,
             data_size,
             length(out_buffer)
         )
 
         checkbounds(output, decompressed_size)
-        unsafe_copyto!(output.ptr, pointer(out_buffer), decompressed_size)
+        GC.@preserve out_buffer unsafe_copyto!(output.ptr, pointer(out_buffer), decompressed_size)
 
         return (data_size + CINT_SIZE, decompressed_size, :ok)
     catch err
