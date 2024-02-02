@@ -81,7 +81,7 @@ end
 Returns the minimum output size of `process`.
 """
 function TranscodingStreams.minoutsize(codec::LZ4FastCompressor, input::Memory)::Int
-    LZ4_compressBound(input.size) + CINT_SIZE
+    LZ4_compressBound(length(input)) + CINT_SIZE
 end
 
 """
@@ -141,11 +141,11 @@ function TranscodingStreams.process(
     error::Error
 )::Tuple{Int,Int,Symbol}
 
-    input.size == 0 && return (0, 0, :end)
+    length(input) == 0 && return (0, 0, :end)
     try
         in_buffer = get_buffer!(codec.buffer)
 
-        data_size = min(input.size, codec.block_size)
+        data_size = min(length(input), codec.block_size)
         out_buffer = Vector{UInt8}(undef, LZ4_compressBound(data_size))
         GC.@preserve in_buffer unsafe_copyto!(pointer(in_buffer), input.ptr, data_size)
 
@@ -206,7 +206,7 @@ end
 Returns the expected size of the transcoded data.
 """
 function TranscodingStreams.expectedsize(codec::LZ4SafeDecompressor, input::Memory)::Int
-    max(input.size * 2, codec.block_size)
+    max(length(input) * 2, codec.block_size)
 end
 
 """
@@ -215,7 +215,7 @@ end
 Returns the minimum output size of `process`.
 """
 function TranscodingStreams.minoutsize(codec::LZ4SafeDecompressor, input::Memory)::Int
-    max(input.size * 2, codec.block_size)
+    max(length(input) * 2, codec.block_size)
 end
 
 """
@@ -274,7 +274,7 @@ function TranscodingStreams.process(
     error::Error
 )::Tuple{Int,Int,Symbol}
 
-    input.size == 0 && return (0, 0, :end)
+    length(input) == 0 && return (0, 0, :end)
     try
         out_buffer = get_buffer!(codec.buffer)
         data_size = readint(input)

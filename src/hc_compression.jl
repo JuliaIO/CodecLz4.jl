@@ -95,7 +95,7 @@ end
 Returns the minimum output size of `process`.
 """
 function TranscodingStreams.minoutsize(codec::LZ4HCCompressor, input::Memory)::Int
-    LZ4_compressBound(input.size) + CINT_SIZE
+    LZ4_compressBound(length(input)) + CINT_SIZE
 end
 
 """
@@ -146,9 +146,9 @@ function TranscodingStreams.process(
     error::Error
 )::Tuple{Int,Int,Symbol}
 
-    input.size == 0 && return (0, 0, :end)
+    length(input) == 0 && return (0, 0, :end)
     try
-        data_size = min(input.size, codec.block_size)
+        data_size = min(length(input), codec.block_size)
 
         in_buffer = copy_data!(codec.buffer, input, data_size)
         out_buffer = Vector{UInt8}(undef, LZ4_compressBound(data_size))
