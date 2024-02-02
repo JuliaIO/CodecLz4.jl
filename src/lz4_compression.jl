@@ -1,19 +1,14 @@
 const CINT_SIZE = sizeof(Cint)
 
 function writeint(mem::Memory, int::Cint)
-    buf = reinterpret(UInt8, [int])
-
-    checkbounds(mem, CINT_SIZE)
-    unsafe_copyto!(mem.ptr, pointer(buf), CINT_SIZE)
+    checkbounds(mem, sizeof(Cint))
+    unsafe_store!(Ptr{Cint}(mem.ptr), int)
     return CINT_SIZE
 end
 
 function readint(mem::Memory)
-    buf = Vector{UInt8}(undef, CINT_SIZE)
-
-    checkbounds(mem, CINT_SIZE)
-    unsafe_copyto!(pointer(buf), mem.ptr, CINT_SIZE)
-    return reinterpret(Cint, buf)[1]
+    checkbounds(mem, sizeof(Cint))
+    return unsafe_load(Ptr{Cint}(mem.ptr))
 end
 
 mutable struct SimpleDoubleBuffer
