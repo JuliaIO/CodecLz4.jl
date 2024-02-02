@@ -11,6 +11,9 @@ Codecs for the standard LZ4 and LZ4_HC formats are also provided as `LZ4FastComp
 These codecs follow the [LZ4 streaming examples](https://github.com/lz4/lz4/tree/master/examples),
 breaking the data into blocks and prepending each compressed block with a size.
 Data compressed with these codecs can be decompressed with `LZ4SafeDecompressor`.
+> [!CAUTION]
+> `LZ4FastCompressor` and `LZ4HCCompressor` output is not compatible with lz4frame and is platform dependent.
+
 
 Non-streaming functions are included via `lz4_compress`, `lz4_hc_compress`, and `lz4_decompress`.
 These should work with most other standard lz4 implementations.
