@@ -124,7 +124,7 @@ function TranscodingStreams.process(codec::LZ4FrameCompressor, input::Memory, ou
             return (data_read, data_written, :error)
         end
         data_written = sizeof(codec.header)
-        unsafe_copyto!(output.ptr, pointer(codec.header), data_written)
+        GC.@preserve codec unsafe_copyto!(output.ptr, pointer(codec.header), data_written)
         codec.write_header = false
     end
 
