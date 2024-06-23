@@ -52,28 +52,32 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
 end
 
 @testset "Errors" begin
-    input = Memory(Vector{UInt8}(text))
-    output = Memory(Vector{UInt8}(undef, 1280))
-    not_initialized = LZ4FrameCompressor()
-    @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
-    @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0, 0, :error)
+    input_data = Vector{UInt8}(text)
+    output_data = Vector{UInt8}(undef, 1280)
+    GC.@preserve input_data output_data begin
+        input = Memory(pointer(input_data), length(input_data))
+        output = Memory(pointer(output_data), length(output_data))
+        not_initialized = LZ4FrameCompressor()
+        @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
+        @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0, 0, :error)
 
-    compressed = transcode(LZ4FrameCompressor, Vector{UInt8}(text))
-    corrupted = copy(compressed)
-    corrupted[1] = 0x00
-    file = IOBuffer(corrupted)
-    stream = LZ4FrameDecompressorStream(file)
-    @test_throws CodecLz4.LZ4Exception read(stream)
-    @test_throws ArgumentError read(stream)
+        compressed = transcode(LZ4FrameCompressor, Vector{UInt8}(text))
+        corrupted = copy(compressed)
+        corrupted[1] = 0x00
+        file = IOBuffer(corrupted)
+        stream = LZ4FrameDecompressorStream(file)
+        @test_throws CodecLz4.LZ4Exception read(stream)
+        @test_throws ArgumentError read(stream)
 
-    output = Memory(Vector{UInt8}(undef, 1))
-    compressor = LZ4FrameCompressor()
-    @test_nowarn TranscodingStreams.initialize(compressor)
-    @test TranscodingStreams.startproc(compressor, :read, Error()) == :ok
-    err = Error()
-    @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
-    @test err[].msg == "Output buffer too small for header."
-    @test_nowarn TranscodingStreams.finalize(compressor)
+        output = Memory(pointer(output_data), 1)
+        compressor = LZ4FrameCompressor()
+        @test_nowarn TranscodingStreams.initialize(compressor)
+        @test TranscodingStreams.startproc(compressor, :read, Error()) == :ok
+        err = Error()
+        @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
+        @test err[].msg == "Output buffer too small for header."
+        @test_nowarn TranscodingStreams.finalize(compressor)
+    end
 
     codec = LZ4FrameDecompressor()
     @test_throws CodecLz4.LZ4Exception transcode(codec, "not properly formatted")
