@@ -1,5 +1,5 @@
-using TranscodingStreams: TranscodingStream, Error, Memory,
-    test_roundtrip_fileio, test_roundtrip_transcode
+using TranscodingStreams: TranscodingStream, Error, Memory
+using TestsForCodecPackages: test_roundtrip_fileio, test_roundtrip_transcode
 using TranscodingStreams
 
 text = b"""
