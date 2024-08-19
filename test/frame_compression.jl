@@ -22,6 +22,12 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     @test sizeof(decompressed) > sizeof(compressed)
     @test decompressed == Vector{UInt8}(text)
 
+    TranscodingStreams.test_roundtrip_read(LZ4FrameCompressorStream, LZ4FrameDecompressorStream)
+    TranscodingStreams.test_roundtrip_write(LZ4FrameCompressorStream, LZ4FrameDecompressorStream)
+    TranscodingStreams.test_roundtrip_lines(LZ4FrameCompressorStream, LZ4FrameDecompressorStream)
+    if isdefined(TranscodingStreams, :test_roundtrip_seekstart)
+        TranscodingStreams.test_roundtrip_seekstart(LZ4FrameCompressorStream, LZ4FrameDecompressorStream)
+    end
     test_roundtrip_fileio(LZ4FrameCompressor, LZ4FrameDecompressor)
     test_roundtrip_transcode(LZ4FrameCompressor, LZ4FrameDecompressor)
 
