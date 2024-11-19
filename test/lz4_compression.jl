@@ -94,7 +94,7 @@
             # Decompression with too-small block_size
             output_data = Vector{UInt8}(undef, 1024)
             compressed_data = transcode(LZ4FastCompressor, text)
-            GC.@preserve output_data compressed begin
+            GC.@preserve output_data compressed_data begin
                 output = Memory(pointer(output_data), length(output_data))
                 compressed = Memory(pointer(compressed_data), length(compressed_data))
                 decompressor = LZ4SafeDecompressor(; block_size = 200)
