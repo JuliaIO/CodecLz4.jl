@@ -57,7 +57,9 @@ else
         end
 
         return quote
-            @inline
+            @static if VERSION >= v"1.8"
+                @inline
+            end
             $(cconvert_exprs...)
             GC.@preserve $(cconvert_args...) $(call)
         end
