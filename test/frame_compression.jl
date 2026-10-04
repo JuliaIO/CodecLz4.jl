@@ -1,5 +1,6 @@
 using TranscodingStreams: TranscodingStream, Error, Memory
-using TestsForCodecPackages: test_roundtrip_fileio, test_roundtrip_transcode
+using TestsForCodecPackages: test_roundtrip_fileio, test_roundtrip_transcode, test_roundtrip_seekstart,
+    test_roundtrip_read, test_roundtrip_write, test_roundtrip_lines
 using TranscodingStreams
 
 text = b"""
@@ -22,6 +23,10 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     @test sizeof(decompressed) > sizeof(compressed)
     @test decompressed == Vector{UInt8}(text)
 
+    test_roundtrip_read(LZ4FrameCompressorStream, LZ4FrameDecompressorStream)
+    test_roundtrip_write(LZ4FrameCompressorStream, LZ4FrameDecompressorStream)
+    test_roundtrip_lines(LZ4FrameCompressorStream, LZ4FrameDecompressorStream)
+    test_roundtrip_seekstart(LZ4FrameCompressorStream, LZ4FrameDecompressorStream)
     test_roundtrip_fileio(LZ4FrameCompressor, LZ4FrameDecompressor)
     test_roundtrip_transcode(LZ4FrameCompressor, LZ4FrameDecompressor)
 
@@ -49,6 +54,53 @@ erat ex bibendum ipsum, sed varius ipsum ipsum vitae dui.
     @test hash(read(stream)) == hash(b"")
     close(stream)
     close(file)
+end
+
+@testset "Restarting a frame decoder" begin
+    data = UInt8[mod(i * 37, 256) for i in 1:100_000]
+    compressed = transcode(LZ4FrameCompressor, data)
+    stream = LZ4FrameDecompressorStream(IOBuffer(compressed))
+    try
+        for n in (0, 1, 2, 7, 20, 1024, 60_000)
+            @test read(stream, n) == data[1:n]
+            seekstart(stream)
+        end
+        @test read(stream) == data
+        seekstart(stream)
+        @test read(stream) == data
+    finally
+        close(stream)
+    end
+end
+
+@testset "Frame decoder context ownership" begin
+    uninitialized = LZ4FrameDecompressor()
+    err = Error()
+    @test TranscodingStreams.startproc(uninitialized, :read, err) == :error
+    @test err[] isa CodecLz4.LZ4Exception
+
+    codec = LZ4FrameDecompressor()
+    TranscodingStreams.initialize(codec)
+    context = codec.dctx
+    try
+        corrupted = fill(0xff, 32)
+        output = zeros(UInt8, 1280)
+        err = Error()
+        GC.@preserve corrupted output begin
+            @test TranscodingStreams.process(codec,
+                Memory(pointer(corrupted), length(corrupted)),
+                Memory(pointer(output), length(output)), err) == (0, 0, :error)
+        end
+        @test sprint(showerror, err[]) == "LZ4F_decompress: ERROR_frameType_unknown"
+        @test codec.dctx == context
+        @test TranscodingStreams.startproc(codec, :read, Error()) == :ok
+        @test transcode(codec, transcode(LZ4FrameCompressor, text)) == text
+        @test codec.dctx == context
+    finally
+        TranscodingStreams.finalize(codec)
+    end
+    @test codec.dctx == C_NULL
+    @test_nowarn TranscodingStreams.finalize(codec)
 end
 
 @testset "Errors" begin
@@ -85,6 +137,13 @@ end
 end
 
 @testset "keywords" begin
+    for option in (BlockSizeID, BlockMode, FrameType)
+        for value in instances(option)
+            @test option(Cuint(value)) == value
+        end
+        @test_throws ArgumentError option(typemax(Cuint))
+    end
+
     compressor = LZ4FrameCompressor(
         blocksizeid = max64KB,
         blockmode = block_independent,
