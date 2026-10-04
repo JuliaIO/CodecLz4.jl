@@ -151,7 +151,7 @@ mutable struct LZ4FrameDecompressor <: TranscodingStreams.Codec
 end
 
 """
-    LZ4FrameCompressor()
+    LZ4FrameDecompressor()
 
 Creates an LZ4 decompression codec.
 """
@@ -163,7 +163,7 @@ end
 const LZ4FrameDecompressorStream{S} = TranscodingStream{LZ4FrameDecompressor,S} where S<:IO
 
 """
-    LZ4FrameCompressorStream(stream::IO; kwargs...)
+    LZ4FrameDecompressorStream(stream::IO; kwargs...)
 
 Creates an LZ4 decompression stream. See `TranscodingStream()` for arguments.
 """
@@ -195,10 +195,27 @@ function TranscodingStreams.finalize(codec::LZ4FrameDecompressor)::Nothing
 end
 
 """
+    TranscodingStreams.startproc(codec::LZ4FrameDecompressor, mode::Symbol, error::Error)
+
+Reset the decompression context before processing a new stream, including after
+rewinding or abandoning a partially decoded frame.
+"""
+function TranscodingStreams.startproc(codec::LZ4FrameDecompressor, mode::Symbol, error::Error)::Symbol
+    try
+        LZ4F_resetDecompressionContext(codec.dctx)
+        :ok
+    catch err
+        error[] = err
+        :error
+    end
+end
+
+"""
     TranscodingStreams.process(codec::LZ4FrameDecompressor, input::Memory, output::Memory, error::Error)
 
 Decompresses the data from `input` and writes to `output`.
-If the input data is not properly formatted this function will throw an error.
+Invalid input is recorded in `error` and reported with `:error`. The codec retains
+its context for finalization or a subsequent reset with `startproc`.
 """
 function TranscodingStreams.process(codec::LZ4FrameDecompressor, input::Memory, output::Memory, error::Error)::Tuple{Int,Int,Symbol}
     data_read = 0
@@ -214,9 +231,6 @@ function TranscodingStreams.process(codec::LZ4FrameDecompressor, input::Memory, 
             (src_size[], dst_size[], :ok)
         end
     catch err
-        if isa(err, LZ4Exception) && err.msg == "ERROR_frameType_unknown"
-            codec.dctx = C_NULL
-        end
         error[] = err
         (data_read, data_written, :error)
     end
