@@ -3,6 +3,7 @@ using Test
 
 @testset "CodecLz4.jl" begin
     include("gcsafe_ccall.jl")
+    include("runtime_compatibility.jl")
     include("headers/lz4.jl")
     include("headers/lz4frame.jl")
     include("headers/lz4hc.jl")

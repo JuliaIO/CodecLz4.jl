@@ -13,6 +13,9 @@ isn't blocked from running, but may also be required to prevent deadlocks (see J
 
 Note that this is generally only safe with non-Julia C functions that do not call back into Julia
 directly.
+
+On Julia versions predating `@ccall`, only fixed-argument calls to a function
+symbol or a library-qualified name are supported.
 """
 macro gcsafe_ccall end
 
@@ -22,6 +25,17 @@ if HAS_CCALL_GCSAFE
         return Base.ccall_macro_lower((:ccall), Base.ccall_macro_parse(exprs)...)
     end
 else
+    function parse_ccall(expr)
+        if isdefined(Base, :ccall_macro_parse)
+            return Base.ccall_macro_parse(expr)
+        end
+        call, rettype = expr.args
+        name = call.args[1]
+        func = name isa Symbol ? QuoteNode(name) : Expr(:tuple, name.args[2], name.args[1])
+        args = call.args[2:end]
+        return func, rettype, [arg.args[2] for arg in args], [arg.args[1] for arg in args], 0
+    end
+
     function ccall_macro_lower(func, rettype, types, args, nreq)
         # instead of re-using ccall or Expr(:foreigncall) to perform argument conversion,
         # we need to do so ourselves in order to insert a jl_gc_safe_enter|leave
@@ -46,12 +60,12 @@ else
         call = quote
             $(unsafe_convert_exprs...)
 
-            gc_state = @ccall(jl_gc_safe_enter()::Int8)
+            gc_state = ccall(:jl_gc_safe_enter, Int8, ())
             ret = ccall(
                 $(esc(func)), $(esc(rettype)), $(Expr(:tuple, map(esc, types)...)),
                 $(unsafe_convert_args...)
             )
-            @ccall(jl_gc_safe_leave(gc_state::Int8)::Cvoid)
+            ccall(:jl_gc_safe_leave, Cvoid, (Int8,), gc_state)
             ret
         end
 
@@ -65,7 +79,6 @@ else
     end
 
     macro gcsafe_ccall(expr)
-        return ccall_macro_lower(Base.ccall_macro_parse(expr)...)
+        return ccall_macro_lower(parse_ccall(expr)...)
     end
 end # HAS_CCALL_GCSAFE
-
