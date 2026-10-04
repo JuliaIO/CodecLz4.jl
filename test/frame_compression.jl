@@ -91,7 +91,7 @@ end
                 Memory(pointer(corrupted), length(corrupted)),
                 Memory(pointer(output), length(output)), err) == (0, 0, :error)
         end
-        @test err[].msg == "ERROR_frameType_unknown"
+        @test sprint(showerror, err[]) == "LZ4F_decompress: ERROR_frameType_unknown"
         @test codec.dctx == context
         @test TranscodingStreams.startproc(codec, :read, Error()) == :ok
         @test transcode(codec, transcode(LZ4FrameCompressor, text)) == text
@@ -137,6 +137,13 @@ end
 end
 
 @testset "keywords" begin
+    for option in (BlockSizeID, BlockMode, FrameType)
+        for value in instances(option)
+            @test option(Cuint(value)) == value
+        end
+        @test_throws ArgumentError option(typemax(Cuint))
+    end
+
     compressor = LZ4FrameCompressor(
         blocksizeid = max64KB,
         blockmode = block_independent,
