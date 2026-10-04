@@ -10,4 +10,9 @@ using Test
     include("hc_compression.jl")
     include("lz4_compression.jl")
     include("simple_compression.jl")
+    @testset "Native buffer lifetime" begin
+        project = dirname(Base.active_project())
+        script = joinpath(@__DIR__, "buffer_lifetime.jl")
+        @test success(`$(Base.julia_cmd()) --project=$project $script`)
+    end
 end

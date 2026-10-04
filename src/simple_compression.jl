@@ -14,12 +14,12 @@ function lz4_compress(
     ))
 
     out_buffer = Vector{UInt8}(undef, bound)
-    out_size = LZ4_compress_fast(pointer(input), pointer(out_buffer), length(input), bound, acceleration)
+    out_size = LZ4_compress_fast(input, out_buffer, length(input), bound, acceleration)
     resize!(out_buffer, out_size)
 end
 
 """
-    lz4_hc_compress(input::Union{Vector{UInt8},Base.CodeUnits{UInt8}}, acceleration::Integer=$LZ4HC_CLEVEL_DEFAULT)
+    lz4_hc_compress(input::Union{Vector{UInt8},Base.CodeUnits{UInt8}}, compressionlevel::Integer=$LZ4HC_CLEVEL_DEFAULT)
 
 Compresses `input` using LZ4_compress_HC. Returns a Vector{UInt8} of the compressed data.
 """
@@ -34,12 +34,12 @@ function lz4_hc_compress(
     ))
 
     out_buffer = Vector{UInt8}(undef, bound)
-    out_size = LZ4_compress_HC(pointer(input), pointer(out_buffer), length(input), bound, compressionlevel)
+    out_size = LZ4_compress_HC(input, out_buffer, length(input), bound, compressionlevel)
     resize!(out_buffer, out_size)
 end
 
 """
-    lz4_decompress(input::Union{Vector{UInt8},Base.CodeUnits{UInt8}}, expected_size::Integer=input.size * 2)
+    lz4_decompress(input::Union{Vector{UInt8},Base.CodeUnits{UInt8}}, expected_size::Integer=length(input) * 2)
 
 Decompresses `input` using LZ4_decompress_safe.
 `expected_size` must be equal to or larger than the expected decompressed size of the input or decompression will fail.
@@ -50,6 +50,6 @@ function lz4_decompress(
     expected_size::Integer=length(input) * 2
 )
     out_buffer = Vector{UInt8}(undef, expected_size)
-    out_size = LZ4_decompress_safe(pointer(input), pointer(out_buffer), length(input), expected_size)
+    out_size = LZ4_decompress_safe(input, out_buffer, length(input), expected_size)
     resize!(out_buffer, out_size)
 end
