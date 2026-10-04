@@ -22,6 +22,7 @@ end
 
 Base.showerror(io::IO, ex::LZ4Exception) = print(io, "$(ex.src): $(ex.msg)")
 
+include("gcsafe_ccall.jl")
 include("headers/lz4frame.jl")
 include("headers/lz4.jl")
 include("headers/lz4hc.jl")

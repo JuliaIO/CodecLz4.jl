@@ -58,24 +58,28 @@
 
     @testset "Errors" begin
         # Uninitialized
-        input = Memory(Vector{UInt8}(text))
-        output = Memory(Vector{UInt8}(undef, 1280))
-        not_initialized = LZ4HCCompressor()
-        @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
-        @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0, 0, :error)
+        input_data = Vector{UInt8}(text)
+        output_data = Vector{UInt8}(undef, 1280)
+        GC.@preserve input_data output_data begin
+            input = Memory(pointer(input_data), length(input_data))
+            output = Memory(pointer(output_data), length(output_data))
+            not_initialized = LZ4HCCompressor()
+            @test TranscodingStreams.startproc(not_initialized, :read, Error()) == :error
+            @test TranscodingStreams.process(not_initialized, input, output, Error()) == (0, 0, :error)
 
-        # Compression into too-small buffer
-        output = Memory(Vector{UInt8}(undef, 1))
-        compressor = LZ4HCCompressor()
-        try
-            @test_nowarn TranscodingStreams.initialize(compressor)
-            @test TranscodingStreams.startproc(compressor, :read, Error()) == :ok
-            err = Error()
-            @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
+            # Compression into too-small buffer
+            output = Memory(pointer(output_data), 1)
+            compressor = LZ4HCCompressor()
+            try
+                @test_nowarn TranscodingStreams.initialize(compressor)
+                @test TranscodingStreams.startproc(compressor, :read, Error()) == :ok
+                err = Error()
+                @test TranscodingStreams.process(compressor, input, output, err) == (0, 0, :error)
 
-            @test err[] isa BoundsError
-        finally
-            TranscodingStreams.finalize(compressor)
+                @test err[] isa BoundsError
+            finally
+                TranscodingStreams.finalize(compressor)
+            end
         end
 
         # Block size too large

@@ -46,7 +46,7 @@ This function never writes outside `dst` buffer, nor read outside `source` buffe
 Returns the number of bytes written into buffer `dst` (necessarily <= dstcapacity)
 """
 function LZ4_compress_fast(src, dst, srcsize, dstcapacity, acceleration=1)
-    ret = ccall((:LZ4_compress_fast, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint, Cint), src, dst, srcsize, dstcapacity, acceleration)
+    ret = @gcsafe_ccall liblz4.LZ4_compress_fast(src::Ptr{UInt8}, dst::Ptr{UInt8}, srcsize::Cint, dstcapacity::Cint, acceleration::Cint)::Cint
     check_compression_error(ret, "LZ4_compress_fast")
 end
 
@@ -63,7 +63,7 @@ or fill `dst` buffer completely with as much data as possible from `src`.
 Returns number of bytes written into `dst` (necessarily <= dstcapacity)
 """
 function LZ4_compress_destSize(src, dst, srcsize, dstcapacity)
-    ret = ccall((:LZ4_compress_destSize, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Ptr{Cint}, Cint), src, dst, srcsize, dstcapacity)
+    ret = @gcsafe_ccall liblz4.LZ4_compress_destSize(src::Ptr{UInt8}, dst::Ptr{UInt8}, srcsize::Ptr{Cint}, dstcapacity::Cint)::Cint
     check_compression_error(ret, "LZ4_compress_destSize")
 end
 
@@ -150,7 +150,7 @@ dstcapacity : is the size of destination buffer, which must be already allocated
 Returns the number of bytes decompressed into destination buffer (necessarily <= dstcapacity)
 """
 function LZ4_decompress_safe(src, dst, cmpsize, dstcapacity)
-    ret = ccall((:LZ4_decompress_safe, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint), src, dst, cmpsize, dstcapacity)
+    ret = @gcsafe_ccall liblz4.LZ4_decompress_safe(src::Ptr{UInt8}, dst::Ptr{UInt8}, cmpsize::Cint, dstcapacity::Cint)::Cint
     check_decompression_error(ret, "LZ4_decompress_safe")
 end
 
