@@ -24,6 +24,7 @@ jobs:
       - uses: julia-actions/cache@v2
       - run: julia --project -e 'using Pkg; Pkg.instantiate()'
       - run: julia --project --compiled-modules=no --code-coverage=user test/runtime_compatibility.jl
+      - run: julia --project --compiled-modules=no --code-coverage=user test/buffer_lifetime.jl
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1.6'

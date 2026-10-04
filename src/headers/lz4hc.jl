@@ -24,7 +24,7 @@ Max supported `srcsize` value is LZ4_MAX_INPUT_SIZE
 Returns the number of bytes written into `dst`
 """
 function LZ4_compress_HC(src, dst, srcsize, dstcapacity, compressionlevel=LZ4HC_CLEVEL_DEFAULT)
-    ret = ccall((:LZ4_compress_HC, liblz4), Cint, (Cstring, Cstring, Cint, Cint, Cint), src, dst, srcsize, dstcapacity, compressionlevel)
+    ret = ccall((:LZ4_compress_HC, liblz4), Cint, (Ptr{UInt8}, Ptr{UInt8}, Cint, Cint, Cint), src, dst, srcsize, dstcapacity, compressionlevel)
     check_compression_error(ret, "LZ4_compress_HC")
 end
 
