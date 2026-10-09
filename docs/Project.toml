@@ -2,6 +2,9 @@
 CodecLz4 = "5ba52731-8f18-5e0d-9241-30f10d1ec561"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 
+[sources]
+CodecLz4 = {path = "/Users/jacob.quinn/.julia/dev/maintenance-sweep-20261003/CodecLz4-docs-token"}
+
 [compat]
 CodecLz4 = "0.4"
 Documenter = "1"
